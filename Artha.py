@@ -18,7 +18,7 @@ df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
 def calculate_financial_health_score(row):
     debt_to_income = row['Loan_Repayment'] / row['Income'] if row['Income'] > 0 else 1
     savings_rate = row['Desired_Savings'] / row['Income'] if row['Income'] > 0 else 0
-    discretionary_spending = (row['Eating_Out'] + row['Entertainment'] + row['Miscellaneous']) / row['Income']
+    discretionary_spending = (row['Eating_Out'] + row['Entertainment'] + row['Miscellaneous']) / row['Income'] if row['Income'] > 0 else 0
     
     score = 100 - (debt_to_income * 40 + discretionary_spending * 30 - savings_rate * 30)
     return max(0, min(100, score))
