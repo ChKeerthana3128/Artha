@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestRegressor
 
-# Load dataset directly from code
+# Load dataset
 df = pd.read_csv("financial_data.csv")
 
 # Data Preprocessing
@@ -24,45 +25,42 @@ def calculate_financial_health_score(row):
     return max(0, min(100, score))
 
 df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
-df['Predicted_Savings'] = df['Disposable_Income'] * np.random.uniform(0.8, 1.2)
 
-# Generate Alerts & Recommendations
-def generate_predictive_alert(row):
-    if row['Predicted_Savings'] < row['Desired_Savings']:
-        return "⚠️ Warning! Your current spending habits may not meet your savings goal."
-    return "✅ Your financial trajectory is stable. Keep up the good work!"
+# Train Model
+features = numeric_cols
+target = 'Financial_Health_Score'
 
-def generate_recommendations(row):
-    recs = []
-    if row['Predicted_Savings'] < row['Desired_Savings']:
-        if row['Eating_Out'] > 0:
-            recs.append("🍽️ Reduce dining out expenses.")
-        if row['Entertainment'] > 0:
-            recs.append("🎭 Cut back on entertainment spending.")
-        if row['Miscellaneous'] > 0:
-            recs.append("💡 Re-evaluate miscellaneous expenses.")
-    return " | ".join(recs) if recs else "🎯 Your spending habits are well-balanced."
+X = df[features]
+y = df[target]
 
-df['Predictive_Alert'] = df.apply(generate_predictive_alert, axis=1)
-df['Recommendations'] = df.apply(generate_recommendations, axis=1)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 
 # Streamlit UI
 st.title("💰 AI-Based Financial Health Dashboard 🚀")
 st.markdown("### 📊 Personalized Insights for Better Financial Decisions")
 
-st.subheader("🔍 Financial Summary")
-st.write(df[['Income', 'Financial_Health_Score', 'Predicted_Savings', 'Predictive_Alert', 'Recommendations']])
+# Sidebar Inputs
+st.sidebar.header("📌 Enter Your Financial Details")
+user_input = {}
+for col in numeric_cols:
+    user_input[col] = st.sidebar.number_input(f"{col.replace('_', ' ')}", min_value=0.0, step=0.1)
 
+data_input = pd.DataFrame([user_input])
+data_input[numeric_cols] = scaler.transform(data_input[numeric_cols])
+predicted_score = model.predict(data_input)[0]
+
+# Display Prediction
+st.sidebar.subheader("🧮 Predicted Financial Health Score")
+st.sidebar.write(f"📊 Your Financial Health Score: **{predicted_score:.2f}**")
+
+# Dataset Preview
+st.subheader("📋 Dataset Preview")
+st.dataframe(df.head())
+
+# Visualization
 fig = px.histogram(df, x='Financial_Health_Score', nbins=20, title='📈 Financial Health Score Distribution')
 st.plotly_chart(fig)
 
-fig2 = px.scatter(df, x='Income', y='Predicted_Savings', color='Financial_Health_Score', title='💡 Income vs Predicted Savings')
+fig2 = px.scatter(df, x='Income', y='Financial_Health_Score', color='Financial_Health_Score', title='💡 Income vs Financial Health Score')
 st.plotly_chart(fig2)
-
-st.subheader("📌 Insights & Recommendations")
-for index, row in df.iterrows():
-    st.write(f"**👤 User {index + 1}:**")
-    st.write(f"- 💳 Financial Health Score: {row['Financial_Health_Score']:.2f}")
-    st.write(f"- {row['Predictive_Alert']}")
-    st.write(f"- 🎯 Recommendations: {row['Recommendations']}")
-    st.write("---")
