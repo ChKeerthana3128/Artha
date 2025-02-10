@@ -44,7 +44,9 @@ st.markdown("### 📊 Personalized Insights for Better Financial Decisions")
 st.sidebar.header("📌 Enter Your Financial Details")
 user_input = {}
 for col in numeric_cols:
-    user_input[col] = st.sidebar.number_input(f"{col.replace('_', ' ')}", min_value=0.0, step=0.1)
+    min_val = float(df[col].min())
+    max_val = float(df[col].max())
+    user_input[col] = st.sidebar.slider(f"{col.replace('_', ' ')}", min_value=min_val, max_value=max_val, value=(min_val + max_val) / 2)
 
 data_input = pd.DataFrame([user_input])
 data_input[numeric_cols] = scaler.transform(data_input[numeric_cols])
@@ -53,6 +55,14 @@ predicted_score = model.predict(data_input)[0]
 # Display Prediction
 st.sidebar.subheader("🧮 Predicted Financial Health Score")
 st.sidebar.write(f"📊 Your Financial Health Score: **{predicted_score:.2f}**")
+
+# Insightful Textual Analysis
+if predicted_score < 40:
+    st.sidebar.warning("⚠️ Your financial health is poor. Consider reducing debt and increasing savings.")
+elif predicted_score < 70:
+    st.sidebar.info("ℹ️ Your financial health is moderate. Keep working on balancing expenses and savings.")
+else:
+    st.sidebar.success("✅ Great job! Your financial health is in a strong position.")
 
 # Dataset Preview
 st.subheader("📋 Dataset Preview")
