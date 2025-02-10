@@ -13,6 +13,9 @@ scaler = MinMaxScaler()
 numeric_cols = ['Income', 'Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
                 'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous',
                 'Desired_Savings', 'Disposable_Income']
+
+# Store original min-max values for range selection
+original_min_max = {col: (df[col].min(), df[col].max()) for col in numeric_cols}
 df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
 
 # Calculate Financial Health Score
@@ -44,9 +47,8 @@ st.markdown("### 📊 Personalized Insights for Better Financial Decisions")
 st.sidebar.header("📌 Enter Your Financial Details")
 user_input = {}
 for col in numeric_cols:
-    min_val = float(df[col].min())
-    max_val = float(df[col].max())
-    user_input[col] = st.sidebar.slider(f"{col.replace('_', ' ')}", min_value=min_val, max_value=max_val, value=(min_val + max_val) / 2)
+    min_val, max_val = original_min_max[col]
+    user_input[col] = st.sidebar.slider(f"{col.replace('_', ' ')}", min_value=float(min_val), max_value=float(max_val), value=float((min_val + max_val) / 2))
 
 data_input = pd.DataFrame([user_input])
 data_input[numeric_cols] = scaler.transform(data_input[numeric_cols])
