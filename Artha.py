@@ -28,7 +28,7 @@ def generate_recommendations(row):
     return " | ".join(recs) if recs else "🎯 Your spending habits are well-balanced."
 
 # Load dataset directly from code
-df = pd.read_csv("financial_data.csv")
+df = pd.read_csv("data 2.csv")
 
 # Process Data
 df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
