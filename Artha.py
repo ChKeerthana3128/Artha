@@ -2,7 +2,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from sklearn.preprocessing import MinMaxScaler
 
+# Load dataset directly from code
+df = pd.read_csv("financial_data.csv")
+
+# Data Preprocessing
+scaler = MinMaxScaler()
+numeric_cols = ['Income', 'Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
+                'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous',
+                'Desired_Savings', 'Disposable_Income']
+df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+
+# Calculate Financial Health Score
 def calculate_financial_health_score(row):
     debt_to_income = row['Loan_Repayment'] / row['Income'] if row['Income'] > 0 else 1
     savings_rate = row['Desired_Savings'] / row['Income'] if row['Income'] > 0 else 0
@@ -11,6 +23,10 @@ def calculate_financial_health_score(row):
     score = 100 - (debt_to_income * 40 + discretionary_spending * 30 - savings_rate * 30)
     return max(0, min(100, score))
 
+df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
+df['Predicted_Savings'] = df['Disposable_Income'] * np.random.uniform(0.8, 1.2)
+
+# Generate Alerts & Recommendations
 def generate_predictive_alert(row):
     if row['Predicted_Savings'] < row['Desired_Savings']:
         return "⚠️ Warning! Your current spending habits may not meet your savings goal."
@@ -27,12 +43,6 @@ def generate_recommendations(row):
             recs.append("💡 Re-evaluate miscellaneous expenses.")
     return " | ".join(recs) if recs else "🎯 Your spending habits are well-balanced."
 
-# Load dataset directly from code
-df = pd.read_csv("financial_data.csv")
-
-# Process Data
-df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
-df['Predicted_Savings'] = df['Disposable_Income'] * np.random.uniform(0.8, 1.2)
 df['Predictive_Alert'] = df.apply(generate_predictive_alert, axis=1)
 df['Recommendations'] = df.apply(generate_recommendations, axis=1)
 
