@@ -1,262 +1,299 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import seaborn as sns
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+import warnings
+warnings.filterwarnings("ignore")
 
-# 🏡 **UI Configuration**
-st.set_page_config(page_title="Artha", layout="wide")
-st.title("Artha - AI-Based Financial Dashboard")
-
-# 📌 **Load Dataset with Error Handling**
+# Set page configuration
+st.set_page_config(page_title="💰Artha", layout="wide")
+st.title("💰 Artha")
+# Load Dataset from CSV
 @st.cache_data
 def load_data():
-    try:
-        df = pd.read_csv("financial_data.csv")
-        return df
-    except FileNotFoundError:
-        st.error("⚠️ Error: The dataset file 'financial_data.csv' is missing.")
-        return pd.DataFrame()
+    """Load the dataset from a CSV file without normalization."""
+    data = pd.read_csv("financial_data.csv")  # Replace with your dataset path
+    return data
 
-df = load_data()
+# Load data
+data = load_data()
 
-if not df.empty:
-    
-    # 🔹 **Data Preprocessing**
-    def preprocess_data(df):
-        df.fillna(0, inplace=True)
-        numeric_cols = ['Income', 'Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
-                        'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous',
-                        'Desired_Savings', 'Disposable_Income']
-        scaler = MinMaxScaler()
-        df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-        df["Debt_to_Income_Ratio"] = df["Loan_Repayment"] / df["Income"]
-        df["Savings_Rate"] = df["Desired_Savings"] / df["Income"]
-        df["Disposable_Income_Percentage"] = df["Disposable_Income"] / df["Income"]
-        return df
-
-    df = preprocess_data(df)
-
-    # 🔹 **Train Multiple Linear Regression Model**
-    X = df[['Income', 'Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
-            'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous']]
-    y = df['Desired_Savings']
+# Model Training
+def train_model(data):
+    """Train a Linear Regression model on raw data."""
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
+                    "Desired_Savings_Percentage"]
+    X = data[feature_cols]
+    y = data["Disposable_Income"]
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = LinearRegression()
     model.fit(X_train, y_train)
     
-    df['Predicted_Savings'] = model.predict(X)
-
-    # 🏠 **Sidebar - User Input**
-    st.sidebar.header("📌 Enter Your Details")
-    name = st.sidebar.text_input("👤 Name", "John Doe")
-    age = st.sidebar.number_input("🎂 Age", min_value=18, max_value=100, value=30)
-    income = st.sidebar.number_input("💵 Annual Salary", min_value=10000, max_value=1000000, value=50000, step=1000)
+    y_pred = model.predict(X_test)
+    r2 = r2_score(y_test, y_pred)
     
-    st.sidebar.markdown("---")
+    return model, r2
 
-    # 🔹 **Sidebar Insights & Recommendations**
-    with st.sidebar.expander("📊 Wealth Management Insights"):
-        st.write("- Plan your financial goals effectively.")
-        st.write("- Allocate savings wisely based on your income.")
+@st.cache_resource
+def get_trained_model():
+    model, r2 = train_model(data)
+    return model, r2
 
-    with st.sidebar.expander("💡 Financial Health Insights"):
-        st.write("- Monitor your debt-to-income ratio.")
-        st.write("- Optimize discretionary spending for better savings.")
+# Train the model
+model, r2_score_val = get_trained_model()
 
-    # 🎯 **Financial Goals**
-    st.sidebar.subheader("🎯 Financial Goals")
-    retirement_age = st.sidebar.number_input("At what age do you plan to retire?", min_value=age, max_value=100, step=1)
-    goal = st.sidebar.selectbox("What are you planning for?", ["Retirement", "Buying a Car", "Buying a House"])
+# Helper Functions
+def prepare_input(input_data):
+    """Prepare user input data for prediction without normalization."""
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
+                    "Desired_Savings_Percentage"]
+    input_df = pd.DataFrame({col: [input_data[col]] for col in feature_cols})
+    return input_df
 
-    # 🔹 **Apply Filters Button**
-    apply_filters = st.sidebar.button("✅ Apply Filters")
-
-    if apply_filters:
-        # 🔹 **Financial Health Score Calculation**
-        def calculate_financial_health_score(row):
-            debt_to_income = row['Loan_Repayment'] / row['Income'] if row['Income'] > 0 else 1
-            savings_rate = row['Desired_Savings'] / row['Income'] if row['Income'] > 0 else 0
-            discretionary_spending = (row['Eating_Out'] + row['Entertainment'] + row['Miscellaneous']) / row['Income'] if row['Income'] > 0 else 0
-            score = 100 - (debt_to_income * 40 + discretionary_spending * 30 - savings_rate * 30)
-            return max(0, min(100, score))
-
-        df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
-
-        # 🔹 **Predictive Insights**
-        years_until_retirement = max(0, retirement_age - age)
-        suggested_savings = (income * 0.15) * years_until_retirement if goal == "Retirement" else income * 0.25
-
-        st.subheader("📌 Financial Planning Insights")
-        st.write(f"For your goal: **{goal}**, you should aim to save approximately **₹{suggested_savings:,.2f}** over the next {years_until_retirement} years.")
-
-        st.subheader("📚 Financial Knowledge")
-        st.markdown(
-            "A strong financial plan includes budgeting, investing, and saving for long-term goals. "
-            "Start by allocating a portion of your salary to different financial buckets: "
-            "essential expenses, discretionary spending, and savings. "
-            "The key to financial success is consistency in saving and making informed investment choices."
-        )
-
-        # 📊 **Data Visualization with Table**
-        st.subheader("📊 Financial Data Analysis")
-
-        # 🔹 **Financial Health Score Distribution**
-        st.subheader("📈 Financial Health Score Distribution")
-        fig = px.histogram(df, x='Financial_Health_Score', nbins=20, title='📈 Financial Health Score Distribution')
-        st.plotly_chart(fig)
-        st.dataframe(df[['Income', 'Financial_Health_Score', 'Savings_Rate', 'Debt_to_Income_Ratio']]
-                     .sort_values(by='Financial_Health_Score', ascending=False))
-
-        # 🔹 **Income vs Predicted Savings**
-        st.subheader("💡 Income vs Predicted Savings")
-        fig2 = px.scatter(df, x='Income', y='Predicted_Savings', color='Financial_Health_Score', title='💡 Income vs Predicted Savings')
-        st.plotly_chart(fig2)
-        st.dataframe(df[['Income', 'Predicted_Savings', 'Disposable_Income_Percentage']]
-                     .sort_values(by='Predicted_Savings', ascending=False))
-
-        st.markdown("---")
-        st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
-# Load dataset
-file_path = "financial_data.csv"
-df = pd.read_csv(file_path)
-
-# Function to predict financial health
-def predict_savings(trend_data):
-    X = np.arange(len(trend_data)).reshape(-1, 1)
-    y = trend_data.values
-    model = LinearRegression()
-    model.fit(X, y)
-    future_X = np.array([[len(trend_data) + i] for i in range(1, 7)])
-    return model.predict(future_X)
-
-# Streamlit UI
-
-st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
-
-# User Inputs
-name = st.text_input("Enter your name:")
-age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25)
-salary = st.number_input("Enter your monthly salary (in $):", min_value=500, max_value=100000, value=3000)
-
-# Select columns to visualize
-selected_col = st.selectbox("Select a financial metric to analyze:", df.columns[1:])
-st.write(f"Showing trends for {selected_col}")
-
-# Trend Analysis
-fig = px.line(df, x=df.index, y=selected_col, title=f"Trend Analysis of {selected_col}")
-st.plotly_chart(fig, use_container_width=True)
-
-# Predictive Alerts
-if selected_col in df.columns:
-    predicted_values = predict_savings(df[selected_col])
-    st.subheader("📊 Predictive Alerts")
-    st.write(f"If your current trend continues, your {selected_col} will change as follows:")
-    st.write(pd.DataFrame(predicted_values, columns=[f"{selected_col} Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
-    if predicted_values[-1] < df[selected_col].iloc[-1] * 0.8:
-        st.warning("⚠ Warning: Your financial health is declining! Consider reducing expenses.")
-    else:
-        st.success("✅ Your financial health looks stable!")
-
-# Budgeting Suggestions
-st.subheader("📌 Personalized Financial Tips")
-st.write("Based on your inputs, here are some suggestions:")
-if salary < 2000:
-    st.write("- Consider increasing your income sources or reducing non-essential expenses.")
-elif salary < 5000:
-    st.write("- Aim to save at least 20% of your salary monthly for long-term stability.")
-else:
-    st.write("- Diversify investments and plan for retirement early.")
-
-# Summary
-st.sidebar.title("User Details")
-st.sidebar.write(f"**Name:** {name}")
-st.sidebar.write(f"**Age:** {age}")
-st.sidebar.write(f"**Salary:** ${salary}")
-
-st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
-
-
-# Load dataset
-file_path = "financial_data.csv"
-df = pd.read_csv(file_path)
-
-# Ensure relevant columns exist and have valid values
-df['Desired_Savings_Percentage'] = pd.to_numeric(df.get('Desired_Savings_Percentage', pd.Series()), errors='coerce')
-df['Desired_Savings'] = pd.to_numeric(df.get('Desired_Savings', pd.Series()), errors='coerce')
-df.dropna(subset=['Desired_Savings_Percentage', 'Desired_Savings'], inplace=True)
-
-# Function to calculate financial health score
-def calculate_financial_health(debt, income, savings, desired_savings):
-    debt_to_income = debt / income if income > 0 else 0
-    savings_gap = (desired_savings - savings) / desired_savings if desired_savings > 0 else 0
-    score = (1 - debt_to_income) * 50 + (1 - savings_gap) * 50
+def calculate_financial_health_score(input_data):
+    """Calculate financial health score."""
+    income = input_data["Income"]
+    savings = input_data["Desired_Savings"]
+    debt = input_data["Rent"] + input_data["Loan_Repayment"]
+    miscellaneous = input_data["Miscellaneous"]
+    
+    savings_ratio = savings / income if income > 0 else 0
+    debt_ratio = debt / income if income > 0 else 0
+    discretionary_ratio = miscellaneous / income if income > 0 else 0
+    
+    score = (savings_ratio * 50) - (debt_ratio * 30) - (discretionary_ratio * 20)
     return max(0, min(100, score))
 
-# Function to predict financial health
-def predict_financial_health(trend_data):
-    if len(trend_data) < 2:
-        return np.linspace(trend_data.iloc[-1] if len(trend_data) > 0 else 1000, 
-                           trend_data.iloc[-1] * 1.05 if len(trend_data) > 0 else 1050, 6)  # Safe fallback
-    X = np.arange(len(trend_data)).reshape(-1, 1)
-    y = trend_data.values
-    model = LinearRegression()
-    model.fit(X, y)
-    future_X = np.array([[len(trend_data) + i] for i in range(1, 7)])
-    return model.predict(future_X)
+def predict_disposable_income(model, input_data):
+    """Predict disposable income using raw data."""
+    input_df = prepare_input(input_data)
+    feature_cols = ["Income", "Age", "Dependents", "Rent", "Loan_Repayment", "Insurance", 
+                    "Groceries", "Transport", "Healthcare", "Education", "Miscellaneous", 
+                    "Desired_Savings_Percentage"]
+    prediction = model.predict(input_df[feature_cols])[0]
+    return prediction
 
-# Streamlit UI
-st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
+def predict_future_savings(income, total_expenses, savings_rate, years, income_growth_rate=0.0, expense_growth_rate=0.0):
+    """Predict future savings in INR with growth rates."""
+    savings_trajectory = []
+    current_income = income
+    current_expenses = total_expenses
+    
+    for year in range(years + 1):
+        annual_savings = current_income * (savings_rate / 100) - current_expenses
+        savings_trajectory.append(annual_savings * year if year > 0 else 0)
+        current_income *= (1 + income_growth_rate / 100)
+        current_expenses *= (1 + expense_growth_rate / 100)
+    
+    return savings_trajectory[-1]
 
-# User Inputs with unique keys
-name = st.text_input("Enter your name:", key="name_input")
-age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25, key="age_input")
-income = st.number_input("Enter your monthly income (in $):", min_value=500, max_value=100000, value=3000, key="income_input")
-debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500, key="debt_input")
-savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500, key="savings_input")
-desired_savings = st.number_input("Enter your desired monthly savings (in $):", min_value=0, max_value=100000, value=1000, key="desired_savings_input")
+def get_savings_trajectory(income, total_expenses, savings_rate, years, income_growth_rate, expense_growth_rate):
+    """Get savings trajectory for plotting."""
+    savings_trajectory = []
+    current_income = income
+    current_expenses = total_expenses
+    
+    for year in range(years + 1):
+        annual_savings = current_income * (savings_rate / 100) - current_expenses
+        savings_trajectory.append(annual_savings * year if year > 0 else 0)
+        current_income *= (1 + income_growth_rate / 100)
+        current_expenses *= (1 + expense_growth_rate / 100)
+    
+    return savings_trajectory
 
-# Calculate Financial Health Score
-score = calculate_financial_health(debt, income, savings, desired_savings)
-st.subheader("📊 Financial Health Score")
-st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
+def suggest_wealth_management_params(income, total_expenses, years_to_retirement):
+    """Suggest Wealth Management parameters based on years to retirement."""
+    suggested_fund = total_expenses * 12 * 20  # 20x annual expenses
+    annual_savings_needed = suggested_fund / years_to_retirement if years_to_retirement > 0 else suggested_fund
+    suggested_savings_rate = (annual_savings_needed / income) * 100 if income > 0 else 10.0
+    suggested_savings_rate = min(max(suggested_savings_rate, 5.0), 50.0)
+    suggested_income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
+    suggested_expense_growth = 2.5
+    return suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth
 
-# Predictive Alerts
-if not df.empty and 'Desired_Savings' in df.columns and df['Desired_Savings'].notnull().sum() > 0:
-    predicted_values = predict_financial_health(df['Desired_Savings'])
-else:
-    predicted_values = np.linspace(savings, savings * 1.05, 6)  # Safe default prediction
+# Sidebar Layout with Dropdowns
+st.sidebar.title("Financial Insights")
+st.sidebar.markdown("Your key financial metrics in INR.")
+st.sidebar.subheader("Model Accuracy")
+st.sidebar.write(f"R² Score: {r2_score_val:.2f}")
 
-st.subheader("📈 Predictive Alerts")
-st.write("If your current trend continues, your savings will change as follows:")
-st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
-if predicted_values[-1] < savings * 0.8:
-    st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
-else:
-    st.success("✅ Your savings trend looks stable!")
+# Dropdown Menus for Insights
+with st.sidebar.expander("📊 Wealth Management Insights"):
+    st.write("""
+    - Plan your financial goals effectively.
+    - Allocate savings wisely based on your income.
+    """)
 
-# AI-Generated Recommendations
-st.subheader("💡 AI-Generated Recommendations")
-if score < 50:
-    st.write("- Reduce unnecessary expenses and prioritize paying off debts.")
-    st.write("- Increase your savings rate by at least 10%.")
-elif score < 80:
-    st.write("- Maintain a balanced approach to savings and investments.")
-    st.write("- Consider diversifying income sources.")
-else:
-    st.write("- You have a strong financial foundation! Look into long-term investments.")
+with st.sidebar.expander("💡 Financial Health Insights"):
+    st.write("""
+    - Monitor your debt-to-income ratio.
+    - Optimize discretionary spending for better savings.
+    """)
 
-# Summary
-st.sidebar.title("User Details")
-st.sidebar.write(f"**Name:** {name}")
-st.sidebar.write(f"**Age:** {age}")
-st.sidebar.write(f"**Income:** ${income}")
-st.sidebar.write(f"**Debt:** ${debt}")
-st.sidebar.write(f"**Savings:** ${savings}")
-st.sidebar.write(f"**Desired Savings:** ${desired_savings}")
-st.sidebar.info("🔔 Get AI-driven insights to optimize your financial health!")
+# Main App
+st.title("AI Financial Dashboard (INR)")
+st.markdown("Enter your financial details to get personalized predictions and insights in Indian Rupees.")
+
+# User Input Form
+with st.form(key="financial_form"):
+    st.subheader("Enter Your Details")
+    col1, col2 = st.columns(2)
+    with col1:
+        name = st.text_input("Name", "Amit Sharma")
+        age = st.number_input("Age", min_value=18, max_value=100, value=30)
+        income = st.number_input("Monthly Income (₹)", min_value=0.0, value=50000.0, step=1000.0)
+        dependents = st.number_input("Number of Dependents", min_value=0, value=0)
+        rent = st.number_input("Rent (₹)", min_value=0.0, value=15000.0, step=500.0)
+        loan_repayment = st.number_input("Loan Repayment (₹)", min_value=0.0, value=0.0, step=500.0)
+    with col2:
+        insurance = st.number_input("Insurance (₹)", min_value=0.0, value=2000.0, step=100.0)
+        groceries = st.number_input("Groceries (₹)", min_value=0.0, value=8000.0, step=100.0)
+        transport = st.number_input("Transport (₹)", min_value=0.0, value=3000.0, step=100.0)
+        healthcare = st.number_input("Healthcare (₹)", min_value=0.0, value=1500.0, step=100.0)
+        education = st.number_input("Education (₹)", min_value=0.0, value=0.0, step=100.0)
+        miscellaneous = st.number_input("Miscellaneous (₹) [Eating Out, Entertainment, Utilities]", min_value=0.0, value=7500.0, step=100.0)
+        desired_savings_percentage = st.number_input("Desired Savings Percentage (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0)
+    
+    # Retirement Age Input
+    st.subheader("Retirement Planning")
+    default_retirement_age = min(62, age + 30)
+    retirement_age = st.slider("Retirement Age (up to 62)", int(age), 62, default_retirement_age)
+    
+    submit_button = st.form_submit_button(label="Analyze My Finances")
+
+# Process Inputs and Display Results
+if submit_button:
+    # Create input dictionary
+    input_data = {
+        "Income": income,
+        "Age": age,
+        "Dependents": dependents,
+        "Rent": rent,
+        "Loan_Repayment": loan_repayment,
+        "Insurance": insurance,
+        "Groceries": groceries,
+        "Transport": transport,
+        "Healthcare": healthcare,
+        "Education": education,
+        "Miscellaneous": miscellaneous,
+        "Desired_Savings_Percentage": desired_savings_percentage,
+        "Desired_Savings": income * (desired_savings_percentage / 100)
+    }
+    
+    total_expenses = sum([rent, loan_repayment, insurance, groceries, transport, healthcare, education, miscellaneous])
+    years_to_retirement = max(0, retirement_age - int(age))
+    
+    # Suggest Wealth Management parameters
+    suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years_to_retirement)
+    
+    # Sidebar: Financial Health Score
+    st.sidebar.subheader("Financial Health")
+    health_score = calculate_financial_health_score(input_data)
+    st.sidebar.metric("Score", f"{health_score:.1f}/100")
+    if health_score < 40:
+        st.sidebar.error("⚠️ Low: Take action!")
+    elif health_score < 70:
+        st.sidebar.warning("⚠️ Moderate: Room to improve!")
+    else:
+        st.sidebar.success("✅ Excellent!")
+    
+    # Sidebar: Disposable Income Prediction
+    predicted_disposable = predict_disposable_income(model, input_data)
+    st.sidebar.subheader("Predicted Disposable Income")
+    st.sidebar.metric("Monthly (₹)", f"₹{predicted_disposable:,.2f}")
+    
+    # Wealth Management Section with Dynamic Adjustments
+    st.subheader("Wealth Management")
+    st.write(f"Plan for retirement at age {retirement_age} ({years_to_retirement} years from now):")
+    
+    # Initialize session state
+    if 'desired_retirement_fund' not in st.session_state:
+        st.session_state.desired_retirement_fund = suggested_fund
+    if 'savings_rate_filter' not in st.session_state:
+        st.session_state.savings_rate_filter = suggested_savings_rate
+    if 'income_growth_rate' not in st.session_state:
+        st.session_state.income_growth_rate = suggested_income_growth
+    if 'expense_growth_rate' not in st.session_state:
+        st.session_state.expense_growth_rate = suggested_expense_growth
+    
+    # Update Wealth Management parameters
+    def update_wealth_params():
+        years = max(0, st.session_state.retirement_age - int(age))
+        suggested_fund, suggested_savings_rate, suggested_income_growth, suggested_expense_growth = suggest_wealth_management_params(income, total_expenses, years)
+        st.session_state.desired_retirement_fund = suggested_fund
+        st.session_state.savings_rate_filter = suggested_savings_rate
+        st.session_state.income_growth_rate = suggested_income_growth
+        st.session_state.expense_growth_rate = suggested_expense_growth
+    
+    # Wealth Management Filters
+    st.session_state.retirement_age = st.slider("Retirement Age", int(age), 62, retirement_age, on_change=update_wealth_params)
+    years_to_retirement = max(0, st.session_state.retirement_age - int(age))
+    desired_retirement_fund = st.number_input("Desired Retirement Fund (₹)", min_value=100000.0, value=float(st.session_state.desired_retirement_fund), step=100000.0, key="fund")
+    savings_rate_filter = st.slider("Adjust Savings Rate (%)", 0.0, 100.0, st.session_state.savings_rate_filter, step=1.0, key="savings")
+    income_growth_rate = st.slider("Annual Income Growth Rate (%)", 0.0, 10.0, st.session_state.income_growth_rate, step=0.5, key="income_growth")
+    expense_growth_rate = st.slider("Annual Expense Growth Rate (%)", 0.0, 10.0, st.session_state.expense_growth_rate, step=0.5, key="expense_growth")
+    
+    # Update session state
+    st.session_state.desired_retirement_fund = desired_retirement_fund
+    st.session_state.savings_rate_filter = savings_rate_filter
+    st.session_state.income_growth_rate = income_growth_rate
+    st.session_state.expense_growth_rate = expense_growth_rate
+    
+    # Calculate savings
+    future_savings = predict_future_savings(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    st.sidebar.subheader("Wealth Management Results")
+    st.sidebar.write(f"Projected Savings: **₹{future_savings:,.2f}**")
+    required_savings_rate = (desired_retirement_fund / (income * years_to_retirement)) * 100 if income > 0 and years_to_retirement > 0 else 0
+    st.sidebar.write(f"Required Savings Rate (at current income): **{required_savings_rate:.2f}%**")
+    
+    # Main Area: Detailed Insights
+    st.header(f"Financial Insights for {name}")
+    
+    # Spending Breakdown
+    st.subheader("Spending Breakdown")
+    spending_data = pd.Series({
+        "Rent": rent, "Loan Repayment": loan_repayment, "Insurance": insurance, "Groceries": groceries,
+        "Transport": transport, "Healthcare": healthcare, "Education": education, "Miscellaneous": miscellaneous
+    })
+    fig, ax = plt.subplots(figsize=(10, 5))
+    spending_data.plot(kind="bar", ax=ax, color="skyblue")
+    ax.set_title("Your Monthly Spending (INR)")
+    ax.set_ylabel("Amount (₹)")
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
+    
+    # Savings Growth Plot
+    st.subheader("Savings Growth Projection")
+    years = np.arange(1, years_to_retirement + 1) if years_to_retirement > 0 else np.arange(1, 2)
+    savings_trajectory = get_savings_trajectory(income, total_expenses, savings_rate_filter, years_to_retirement, income_growth_rate, expense_growth_rate)
+    
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(years, savings_trajectory[1:], marker="o", color="green", label="Projected Savings")
+    ax.axhline(y=desired_retirement_fund, color="red", linestyle="--", label="Goal")
+    ax.set_title("Projected Savings Growth (INR)")
+    ax.set_xlabel("Years")
+    ax.set_ylabel("Savings (₹)")
+    ax.legend()
+    st.pyplot(fig)
+    
+    # Actionable Recommendations
+    st.subheader("Personalized Recommendations")
+    if miscellaneous > income * 0.2:
+        st.write(f"- 📉 *Review Miscellaneous Spending*: Exceeds 20% of income (₹{miscellaneous:,.2f}).")
+    if loan_repayment > 0:
+        st.write(f"- 💳 *Clear Debt*: Loan repayment (₹{loan_repayment:,.2f}) reduces your disposable income.")
+    if desired_savings_percentage < 10:
+        st.write(f"- 💰 *Boost Savings*: Increase your savings rate from {desired_savings_percentage:.1f}% to at least 10%.")
+    if total_expenses > income * 0.8:
+        st.write(f"- 📉 *Cut Expenses*: Spending (₹{total_expenses:,.2f}) is over 80% of income—review your budget!")
+
+# Footer
+st.markdown("---")
+st.write("Built with ❤️ using Streamlit & AI/ML | All amounts in Indian Rupees (₹)")
