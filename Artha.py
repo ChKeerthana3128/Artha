@@ -202,7 +202,7 @@ def predict_financial_health(trend_data):
     return model.predict(future_X)
 
 # Streamlit UI
-st.set_page_config(page_title="Financial Health Dashboard", layout="wide")
+
 st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
 
 # User Inputs
