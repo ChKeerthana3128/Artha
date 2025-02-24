@@ -194,6 +194,8 @@ def calculate_financial_health(debt, income, savings):
 
 # Function to predict financial health
 def predict_financial_health(trend_data):
+    if len(trend_data) < 2:
+        return np.array([trend_data.iloc[-1]] * 6)  # Avoid error if not enough data
     X = np.arange(len(trend_data)).reshape(-1, 1)
     y = trend_data.values
     model = LinearRegression()
@@ -202,15 +204,14 @@ def predict_financial_health(trend_data):
     return model.predict(future_X)
 
 # Streamlit UI
-
 st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
 
-# User Inputs
-name = st.text_input("Enter your name:")
-age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25)
-income = st.number_input("Enter your monthly income (in $):", min_value=500, max_value=100000, value=3000)
-debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500)
-savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500)
+# User Inputs with unique keys
+name = st.text_input("Enter your name:", key="name_input")
+age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25, key="age_input")
+income = st.number_input("Enter your monthly income (in $):", min_value=500, max_value=100000, value=3000, key="income_input")
+debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500, key="debt_input")
+savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500, key="savings_input")
 
 # Calculate Financial Health Score
 score = calculate_financial_health(debt, income, savings)
@@ -218,14 +219,17 @@ st.subheader("📊 Financial Health Score")
 st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
 
 # Predictive Alerts
-predicted_values = predict_financial_health(df['savings'])
-st.subheader("📈 Predictive Alerts")
-st.write(f"If your current trend continues, your savings will change as follows:")
-st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
-if predicted_values[-1] < savings * 0.8:
-    st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
+if 'savings' in df.columns and len(df['savings']) > 0:
+    predicted_values = predict_financial_health(df['savings'])
+    st.subheader("📈 Predictive Alerts")
+    st.write(f"If your current trend continues, your savings will change as follows:")
+    st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
+    if predicted_values[-1] < savings * 0.8:
+        st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
+    else:
+        st.success("✅ Your savings trend looks stable!")
 else:
-    st.success("✅ Your savings trend looks stable!")
+    st.error("No savings data available for predictions.")
 
 # AI-Generated Recommendations
 st.subheader("💡 AI-Generated Recommendations")
@@ -246,5 +250,3 @@ st.sidebar.write(f"**Income:** ${income}")
 st.sidebar.write(f"**Debt:** ${debt}")
 st.sidebar.write(f"**Savings:** ${savings}")
 st.sidebar.info("🔔 Get AI-driven insights to optimize your financial health!")
-
-
