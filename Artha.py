@@ -13,7 +13,7 @@ st.markdown("---")
 # Load dataset with error handling
 @st.cache_data
 def load_data():
-    file_path = "/mnt/data/financial_data.csv"
+    file_path = "financial_data.csv"
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
         return df
