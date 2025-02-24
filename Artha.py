@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # Load dataset with correct path
 @st.cache_data
 def load_data():
-    df = pd.read_csv("financial_data.csv")
+    df = pd.read_csv("/mnt/data/financial_data.csv")
     return df
 
 df = load_data()
@@ -31,7 +31,7 @@ df = preprocess_data(df)
 
 # UI Configuration
 st.set_page_config(page_title="AI-Based Financial Dashboard", layout="wide")
-st.title("💰 Artha")
+st.title("💰 AI-Based Financial Health & Wealth Management Dashboard 🚀")
 st.markdown("---")
 
 # Sidebar: User Input
@@ -61,38 +61,6 @@ df['Predicted_Savings'] = df['Disposable_Income'] * np.random.uniform(0.8, 1.2)
 years_until_retirement = max(0, retirement_age - age)
 suggested_savings = (income * 0.15) * years_until_retirement if goal == "Retirement" else income * 0.25
 
-st.subheader("📌 Financial Planning Insights")
-st.write(f"For your goal: **{goal}**, you should aim to save approximately **₹{suggested_savings:,.2f}** over the next {years_until_retirement} years.")
-
-st.subheader("📚 Financial Knowledge")
-st.markdown(
-    "A strong financial plan includes budgeting, investing, and saving for long-term goals. "
-    "Start by allocating a portion of your salary to different financial buckets: "
-    "essential expenses, discretionary spending, and savings. The key to financial success "
-    "is consistency in saving and making informed investment choices."
-)
-
-# Generate Alerts & Recommendations
-def generate_predictive_alert(row):
-    if row['Predicted_Savings'] < row['Desired_Savings']:
-        return "⚠️ Warning! Your current spending habits may not meet your savings goal."
-    return "✅ Your financial trajectory is stable. Keep up the good work!"
-
-def generate_recommendations(row):
-    recs = []
-    if row['Predicted_Savings'] < row['Desired_Savings']:
-        if row['Eating_Out'] > 0:
-            recs.append("🍽️ Reduce dining out expenses.")
-        if row['Entertainment'] > 0:
-            recs.append("🎭 Cut back on entertainment spending.")
-        if row['Miscellaneous'] > 0:
-            recs.append("💡 Re-evaluate miscellaneous expenses.")
-    return " | ".join(recs) if recs else "🎯 Your spending habits are well-balanced."
-
-df['Predictive_Alert'] = df.apply(generate_predictive_alert, axis=1)
-df['Recommendations'] = df.apply(generate_recommendations, axis=1)
-
-# Data Visualization
 st.subheader("📊 Financial Data Analysis")
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.histplot(df["Savings_Rate"], bins=20, kde=True, color="green", ax=ax)
@@ -105,13 +73,23 @@ st.plotly_chart(fig)
 fig2 = px.scatter(df, x='Income', y='Predicted_Savings', color='Financial_Health_Score', title='💡 Income vs Predicted Savings')
 st.plotly_chart(fig2)
 
-st.subheader("📌 Insights & Recommendations")
-for index, row in df.iterrows():
-    st.write(f"**👤 User {index + 1}:**")
-    st.write(f"- 💳 Financial Health Score: {row['Financial_Health_Score']:.2f}")
-    st.write(f"- {row['Predictive_Alert']}")
-    st.write(f"- 🎯 Recommendations: {row['Recommendations']}")
-    st.write("---")
+# Sidebar Dropdowns for Insights & Recommendations
+with st.sidebar.expander("📌 Wealth Management Insights & Recommendations"):
+    st.write(f"For your goal: **{goal}**, you should aim to save approximately **₹{suggested_savings:,.2f}** over the next {years_until_retirement} years.")
+    st.markdown(
+        "A strong financial plan includes budgeting, investing, and saving for long-term goals. "
+        "Start by allocating a portion of your salary to different financial buckets: "
+        "essential expenses, discretionary spending, and savings. The key to financial success "
+        "is consistency in saving and making informed investment choices."
+    )
+
+with st.sidebar.expander("🔍 Financial Health Insights & Recommendations"):
+    for index, row in df.iterrows():
+        st.write(f"**👤 User {index + 1}:**")
+        st.write(f"- 💳 Financial Health Score: {row['Financial_Health_Score']:.2f}")
+        st.write(f"- {row['Predictive_Alert']}")
+        st.write(f"- 🎯 Recommendations: {row['Recommendations']}")
+        st.write("---")
 
 st.markdown("---")
 st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
