@@ -122,3 +122,62 @@ if not df.empty:
 
         st.markdown("---")
         st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
+# Load dataset
+file_path = '/mnt/data/financial_data.csv'
+df = pd.read_csv(file_path)
+
+# Function to predict financial health
+def predict_savings(trend_data):
+    X = np.arange(len(trend_data)).reshape(-1, 1)
+    y = trend_data.values
+    model = LinearRegression()
+    model.fit(X, y)
+    future_X = np.array([[len(trend_data) + i] for i in range(1, 7)])
+    return model.predict(future_X)
+
+# Streamlit UI
+
+st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
+
+# User Inputs
+name = st.text_input("Enter your name:")
+age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25)
+salary = st.number_input("Enter your monthly salary (in $):", min_value=500, max_value=100000, value=3000)
+
+# Select columns to visualize
+selected_col = st.selectbox("Select a financial metric to analyze:", df.columns[1:])
+st.write(f"Showing trends for {selected_col}")
+
+# Trend Analysis
+fig = px.line(df, x=df.index, y=selected_col, title=f"Trend Analysis of {selected_col}")
+st.plotly_chart(fig, use_container_width=True)
+
+# Predictive Alerts
+if selected_col in df.columns:
+    predicted_values = predict_savings(df[selected_col])
+    st.subheader("📊 Predictive Alerts")
+    st.write(f"If your current trend continues, your {selected_col} will change as follows:")
+    st.write(pd.DataFrame(predicted_values, columns=[f"{selected_col} Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
+    if predicted_values[-1] < df[selected_col].iloc[-1] * 0.8:
+        st.warning("⚠ Warning: Your financial health is declining! Consider reducing expenses.")
+    else:
+        st.success("✅ Your financial health looks stable!")
+
+# Budgeting Suggestions
+st.subheader("📌 Personalized Financial Tips")
+st.write("Based on your inputs, here are some suggestions:")
+if salary < 2000:
+    st.write("- Consider increasing your income sources or reducing non-essential expenses.")
+elif salary < 5000:
+    st.write("- Aim to save at least 20% of your salary monthly for long-term stability.")
+else:
+    st.write("- Diversify investments and plan for retirement early.")
+
+# Summary
+st.sidebar.title("User Details")
+st.sidebar.write(f"**Name:** {name}")
+st.sidebar.write(f"**Age:** {age}")
+st.sidebar.write(f"**Salary:** ${salary}")
+
+st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
+
