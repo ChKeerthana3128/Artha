@@ -4,27 +4,28 @@ import numpy as np
 import plotly.express as px
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
-import matplotlib.pyplot as plt
+import os
 
-# UI Configuration
+# 🔹 Page Configuration
 st.set_page_config(page_title="Artha", layout="wide")
-st.title("💰 Artha - AI Financial Insights")
-# Load dataset with error handling
+st.title("💰 Artha - AI-Based Financial Dashboard")
+
+# 🔹 Load Dataset with Proper File Handling
 @st.cache_data
 def load_data():
-    try:
-        df = pd.read_csv("financial_data.csv")  # Ensure the file is in the correct directory
-        return df
-    except FileNotFoundError:
-        st.error("⚠️ Error: The dataset file 'financial_data.csv' is missing. Please upload it to the correct directory.")
+    file_path = "financial_data.csv"
+    if not os.path.exists(file_path):
+        st.error("⚠️ Error: 'financial_data.csv' not found. Please place the file in the correct directory.")
         return pd.DataFrame()
+    return pd.read_csv(file_path)
 
 df = load_data()
 
+# Proceed only if data is loaded
 if not df.empty:
-    # Data Preprocessing
+    # 🔹 Data Preprocessing
     def preprocess_data(df):
-        df.fillna(0, inplace=True)
+        df.fillna(0, inplace=True)  # Handle missing values
         numeric_cols = ['Income', 'Rent', 'Loan_Repayment', 'Insurance', 'Groceries', 'Transport',
                         'Eating_Out', 'Entertainment', 'Utilities', 'Healthcare', 'Education', 'Miscellaneous',
                         'Desired_Savings', 'Disposable_Income']
@@ -37,14 +38,14 @@ if not df.empty:
 
     df = preprocess_data(df)
 
-    # Sidebar: User Input
+    # 🔹 Sidebar User Inputs
     st.sidebar.header("📌 Enter Your Details")
     name = st.sidebar.text_input("👤 Name", "John Doe")
     age = st.sidebar.number_input("🎂 Age", min_value=18, max_value=100, value=30)
     income = st.sidebar.number_input("💵 Annual Salary", min_value=10000, max_value=1000000, value=50000, step=1000)
     st.sidebar.markdown("---")
 
-    # Dropdowns for Insights and Recommendations
+    # 🔹 Dropdowns for Insights & Wealth Management
     with st.sidebar.expander("📊 Wealth Management Insights"):
         st.write("- Plan your financial goals effectively.")
         st.write("- Allocate savings wisely based on your income.")
@@ -53,12 +54,12 @@ if not df.empty:
         st.write("- Monitor your debt-to-income ratio.")
         st.write("- Optimize discretionary spending for better savings.")
 
-    # Financial Goals
+    # 🔹 Financial Goals
     st.sidebar.subheader("🎯 Financial Goals")
     retirement_age = st.sidebar.number_input("At what age do you plan to retire?", min_value=age, max_value=100, step=1)
     goal = st.sidebar.selectbox("What are you planning for?", ["Retirement", "Buying a Car", "Buying a House"])
 
-    # Financial Health Score Calculation
+    # 🔹 Financial Health Score Calculation
     def calculate_financial_health_score(row):
         debt_to_income = row['Loan_Repayment'] / row['Income'] if row['Income'] > 0 else 1
         savings_rate = row['Desired_Savings'] / row['Income'] if row['Income'] > 0 else 0
@@ -69,7 +70,7 @@ if not df.empty:
     df['Financial_Health_Score'] = df.apply(calculate_financial_health_score, axis=1)
     df['Predicted_Savings'] = df['Disposable_Income'] * np.random.uniform(0.8, 1.2)
 
-    # Predictive Insights
+    # 🔹 Predictive Insights for Financial Goals
     years_until_retirement = max(0, retirement_age - age)
     suggested_savings = (income * 0.15) * years_until_retirement if goal == "Retirement" else income * 0.25
 
@@ -84,20 +85,22 @@ if not df.empty:
         "is consistency in saving and making informed investment choices."
     )
 
-    # Data Visualization with Table
+    # 🔹 Data Visualization with Charts & Tables
     st.subheader("📊 Financial Data Analysis")
     
-    # Financial Health Score Distribution
+    # 🔹 Financial Health Score Distribution (Chart + Table)
     st.subheader("📈 Financial Health Score Distribution")
     fig = px.histogram(df, x='Financial_Health_Score', nbins=20, title='📈 Financial Health Score Distribution')
     st.plotly_chart(fig)
-    st.dataframe(df[['Income', 'Financial_Health_Score', 'Savings_Rate', 'Debt_to_Income_Ratio']].sort_values(by='Financial_Health_Score', ascending=False))
-    
-    # Income vs Predicted Savings
+    st.dataframe(df[['Income', 'Financial_Health_Score', 'Savings_Rate', 'Debt_to_Income_Ratio']]
+                 .sort_values(by='Financial_Health_Score', ascending=False))
+
+    # 🔹 Income vs Predicted Savings (Chart + Table)
     st.subheader("💡 Income vs Predicted Savings")
     fig2 = px.scatter(df, x='Income', y='Predicted_Savings', color='Financial_Health_Score', title='💡 Income vs Predicted Savings')
     st.plotly_chart(fig2)
-    st.dataframe(df[['Income', 'Predicted_Savings', 'Disposable_Income_Percentage']].sort_values(by='Predicted_Savings', ascending=False))
+    st.dataframe(df[['Income', 'Predicted_Savings', 'Disposable_Income_Percentage']]
+                 .sort_values(by='Predicted_Savings', ascending=False))
 
     st.markdown("---")
     st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
