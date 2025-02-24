@@ -6,7 +6,7 @@ import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
-# Set page configuration at the very beginning
+# UI Configuration
 st.set_page_config(page_title="AI-Based Financial Dashboard", layout="wide")
 
 # Load dataset with error handling
@@ -36,9 +36,6 @@ if not df.empty:
         return df
 
     df = preprocess_data(df)
-
-    st.title("💰 AI-Based Financial Health & Wealth Management Dashboard 🚀")
-    st.markdown("---")
 
     # Sidebar: User Input
     st.sidebar.header("📌 Enter Your Details")
@@ -87,18 +84,20 @@ if not df.empty:
         "is consistency in saving and making informed investment choices."
     )
 
-    # Data Visualization
+    # Data Visualization with Table
     st.subheader("📊 Financial Data Analysis")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.histplot(df["Savings_Rate"], bins=20, kde=True, color="green", ax=ax)
-    ax.set_title("Savings Rate Distribution")
-    st.pyplot(fig)
-
+    
+    # Financial Health Score Distribution
+    st.subheader("📈 Financial Health Score Distribution")
     fig = px.histogram(df, x='Financial_Health_Score', nbins=20, title='📈 Financial Health Score Distribution')
     st.plotly_chart(fig)
-
+    st.dataframe(df[['Income', 'Financial_Health_Score', 'Savings_Rate', 'Debt_to_Income_Ratio']].sort_values(by='Financial_Health_Score', ascending=False))
+    
+    # Income vs Predicted Savings
+    st.subheader("💡 Income vs Predicted Savings")
     fig2 = px.scatter(df, x='Income', y='Predicted_Savings', color='Financial_Health_Score', title='💡 Income vs Predicted Savings')
     st.plotly_chart(fig2)
+    st.dataframe(df[['Income', 'Predicted_Savings', 'Disposable_Income_Percentage']].sort_values(by='Predicted_Savings', ascending=False))
 
     st.markdown("---")
     st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
