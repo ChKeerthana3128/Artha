@@ -185,6 +185,10 @@ st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
 file_path = "financial_data.csv"
 df = pd.read_csv(file_path)
 
+# Ensure savings column exists and has valid values
+df['savings'] = pd.to_numeric(df.get('savings', pd.Series()), errors='coerce')
+df.dropna(subset=['savings'], inplace=True)
+
 # Function to calculate financial health score
 def calculate_financial_health(debt, income, savings):
     debt_to_income = debt / income if income > 0 else 0
@@ -219,17 +223,17 @@ st.subheader("📊 Financial Health Score")
 st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
 
 # Predictive Alerts
-if 'savings' in df.columns and len(df['savings']) > 0:
+if not df.empty and 'savings' in df.columns and df['savings'].notnull().sum() > 0:
     predicted_values = predict_financial_health(df['savings'])
     st.subheader("📈 Predictive Alerts")
-    st.write(f"If your current trend continues, your savings will change as follows:")
+    st.write("If your current trend continues, your savings will change as follows:")
     st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
     if predicted_values[-1] < savings * 0.8:
         st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
     else:
         st.success("✅ Your savings trend looks stable!")
 else:
-    st.error("No savings data available for predictions.")
+    st.error("⚠ No sufficient savings data available for predictions. Please enter more historical savings data.")
 
 # AI-Generated Recommendations
 st.subheader("💡 AI-Generated Recommendations")
