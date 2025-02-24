@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 # UI Configuration
 st.set_page_config(page_title="Artha", layout="wide")
-
+st.title("💰 Artha - AI Financial Insights")
 # Load dataset with error handling
 @st.cache_data
 def load_data():
