@@ -181,3 +181,70 @@ st.sidebar.write(f"**Salary:** ${salary}")
 
 st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
 
+# Load dataset
+file_path = "financial_data.csv"
+df = pd.read_csv(file_path)
+
+# Function to calculate financial health score
+def calculate_financial_health(debt, income, savings):
+    debt_to_income = debt / income if income > 0 else 0
+    savings_rate = savings / income if income > 0 else 0
+    score = (1 - debt_to_income) * 50 + savings_rate * 50
+    return max(0, min(100, score))
+
+# Function to predict financial health
+def predict_financial_health(trend_data):
+    X = np.arange(len(trend_data)).reshape(-1, 1)
+    y = trend_data.values
+    model = LinearRegression()
+    model.fit(X, y)
+    future_X = np.array([[len(trend_data) + i] for i in range(1, 7)])
+    return model.predict(future_X)
+
+# Streamlit UI
+st.set_page_config(page_title="Financial Health Dashboard", layout="wide")
+st.title("💰 Interactive Financial Health & Wealth Management Dashboard")
+
+# User Inputs
+name = st.text_input("Enter your name:")
+age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25)
+income = st.number_input("Enter your monthly income (in $):", min_value=500, max_value=100000, value=3000)
+debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500)
+savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500)
+
+# Calculate Financial Health Score
+score = calculate_financial_health(debt, income, savings)
+st.subheader("📊 Financial Health Score")
+st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
+
+# Predictive Alerts
+predicted_values = predict_financial_health(df['savings'])
+st.subheader("📈 Predictive Alerts")
+st.write(f"If your current trend continues, your savings will change as follows:")
+st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
+if predicted_values[-1] < savings * 0.8:
+    st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
+else:
+    st.success("✅ Your savings trend looks stable!")
+
+# AI-Generated Recommendations
+st.subheader("💡 AI-Generated Recommendations")
+if score < 50:
+    st.write("- Reduce unnecessary expenses and prioritize paying off debts.")
+    st.write("- Increase your savings rate by at least 10%.")
+elif score < 80:
+    st.write("- Maintain a balanced approach to savings and investments.")
+    st.write("- Consider diversifying income sources.")
+else:
+    st.write("- You have a strong financial foundation! Look into long-term investments.")
+
+# Summary
+st.sidebar.title("User Details")
+st.sidebar.write(f"**Name:** {name}")
+st.sidebar.write(f"**Age:** {age}")
+st.sidebar.write(f"**Income:** ${income}")
+st.sidebar.write(f"**Debt:** ${debt}")
+st.sidebar.write(f"**Savings:** ${savings}")
+st.sidebar.info("🔔 Get AI-driven insights to optimize your financial health!")
+
+
