@@ -181,6 +181,12 @@ st.sidebar.write(f"**Salary:** ${salary}")
 
 st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+from sklearn.linear_model import LinearRegression
+
 # Load dataset
 file_path = "financial_data.csv"
 df = pd.read_csv(file_path)
@@ -199,7 +205,8 @@ def calculate_financial_health(debt, income, savings):
 # Function to predict financial health
 def predict_financial_health(trend_data):
     if len(trend_data) < 2:
-        return np.array([trend_data.iloc[-1]] * 6)  # Avoid error if not enough data
+        return np.linspace(trend_data.iloc[-1] if len(trend_data) > 0 else 1000, 
+                           trend_data.iloc[-1] * 1.05 if len(trend_data) > 0 else 1050, 6)  # Safe fallback
     X = np.arange(len(trend_data)).reshape(-1, 1)
     y = trend_data.values
     model = LinearRegression()
@@ -217,6 +224,13 @@ income = st.number_input("Enter your monthly income (in $):", min_value=500, max
 debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500, key="debt_input")
 savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500, key="savings_input")
 
+# Allow users to input past savings data manually
+st.subheader("📆 Enter Your Savings History (Last 6 Months)")
+past_savings = []
+for i in range(6):
+    past_savings.append(st.number_input(f"Savings {i+1} month(s) ago:", min_value=0, max_value=100000, value=500, key=f"savings_{i}"))
+manual_savings_data = pd.Series(past_savings[::-1])  # Reverse order for timeline
+
 # Calculate Financial Health Score
 score = calculate_financial_health(debt, income, savings)
 st.subheader("📊 Financial Health Score")
@@ -225,15 +239,18 @@ st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
 # Predictive Alerts
 if not df.empty and 'savings' in df.columns and df['savings'].notnull().sum() > 0:
     predicted_values = predict_financial_health(df['savings'])
-    st.subheader("📈 Predictive Alerts")
-    st.write("If your current trend continues, your savings will change as follows:")
-    st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
-    if predicted_values[-1] < savings * 0.8:
-        st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
-    else:
-        st.success("✅ Your savings trend looks stable!")
+elif len(manual_savings_data) > 1:
+    predicted_values = predict_financial_health(manual_savings_data)
 else:
-    st.error("⚠ No sufficient savings data available for predictions. Please enter more historical savings data.")
+    predicted_values = np.linspace(savings, savings * 1.05, 6)  # Safe default prediction
+
+st.subheader("📈 Predictive Alerts")
+st.write("If your current trend continues, your savings will change as follows:")
+st.write(pd.DataFrame(predicted_values, columns=["Savings Projection"], index=["+1M", "+2M", "+3M", "+4M", "+5M", "+6M"]))
+if predicted_values[-1] < savings * 0.8:
+    st.warning("⚠ Warning: Your savings are projected to decline! Consider adjusting your spending.")
+else:
+    st.success("✅ Your savings trend looks stable!")
 
 # AI-Generated Recommendations
 st.subheader("💡 AI-Generated Recommendations")
