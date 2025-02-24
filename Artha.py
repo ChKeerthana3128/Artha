@@ -16,7 +16,7 @@ st.title("Artha - AI-Based Financial Dashboard")
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("/mnt/data/financial_data.csv")
+        df = pd.read_csv("financial_data.csv")
         return df
     except FileNotFoundError:
         st.error("⚠️ Error: The dataset file 'financial_data.csv' is missing. Please upload it to the correct directory.")
