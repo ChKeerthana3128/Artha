@@ -123,7 +123,7 @@ if not df.empty:
         st.markdown("---")
         st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
 # Load dataset
-file_path = '/mnt/data/financial_data.csv'
+file_path = "financial_data.csv"
 df = pd.read_csv(file_path)
 
 # Function to predict financial health
