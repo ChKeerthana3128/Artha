@@ -6,6 +6,9 @@ import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
+# Set page configuration at the very beginning
+st.set_page_config(page_title="AI-Based Financial Dashboard", layout="wide")
+
 # Load dataset with error handling
 @st.cache_data
 def load_data():
@@ -34,8 +37,6 @@ if not df.empty:
 
     df = preprocess_data(df)
 
-    # UI Configuration
-    st.set_page_config(page_title="AI-Based Financial Dashboard", layout="wide")
     st.title("💰 AI-Based Financial Health & Wealth Management Dashboard 🚀")
     st.markdown("---")
 
