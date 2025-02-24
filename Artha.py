@@ -13,8 +13,8 @@ def load_data():
 df = load_data()
 
 # UI Configuration
-st.set_page_config(page_title="AI Financial Health Dashboard", layout="wide")
-st.title("💰 AI-Based Financial Health & Wealth Management Dashboard")
+st.set_page_config(page_title="Artha", layout="wide")
+st.title("💰 Artha")
 st.markdown("---")
 
 # User Input Section
@@ -29,7 +29,9 @@ retirement = st.sidebar.checkbox("Retirement Planning")
 car = st.sidebar.checkbox("Buy a Car")
 house = st.sidebar.checkbox("Buy a House")
 
-# Financial Ratios & Insights
+# Financial Health Prediction Section
+st.header("📊 Financial Health Prediction")
+
 def calculate_ratios(df):
     df["Debt_to_Income_Ratio"] = df["Loan_Repayment"] / df["Income"]
     df["Savings_Rate"] = df["Desired_Savings"] / df["Income"]
@@ -38,12 +40,9 @@ def calculate_ratios(df):
 
 df = calculate_ratios(df)
 
-# Financial Health Prediction
-st.subheader("📊 Financial Health Score & Prediction")
 health_score = round(np.random.uniform(50, 100), 2)  # Simulated AI Score
 st.metric(label="Your Financial Health Score", value=f"{health_score}/100", delta=health_score-75)
 
-# AI Recommendations
 st.subheader("🤖 AI-Generated Recommendations")
 if health_score > 80:
     st.success("🚀 Your finances are in great shape! Keep up the good work!")
@@ -52,7 +51,6 @@ elif 60 <= health_score <= 80:
 else:
     st.error("🔴 High financial risk detected! Cut down on liabilities and boost your savings immediately.")
 
-# Savings Insights
 st.subheader("📈 Savings Optimization Suggestions")
 potential_savings_cols = [
     "Potential_Savings_Groceries", "Potential_Savings_Transport", "Potential_Savings_Eating_Out",
@@ -62,8 +60,14 @@ potential_savings_cols = [
 total_potential_savings = df[potential_savings_cols].sum(axis=1).mean()
 st.info(f"💡 You can potentially save up to **${total_potential_savings:.2f}** per year by optimizing your spending!")
 
-# Wealth Management - Goal Planning
-st.subheader("🎯 Wealth Management - Goal Planning")
+st.subheader("📊 Financial Data Analysis")
+fig, ax = plt.subplots(figsize=(10, 5))
+sns.histplot(df["Savings_Rate"], bins=20, kde=True, color="green", ax=ax)
+ax.set_title("Savings Rate Distribution")
+st.pyplot(fig)
+
+# Wealth Management Section
+st.header("🎯 Wealth Management")
 if retirement:
     retirement_savings = income * 0.15  # Example calculation
     st.write(f"🔹 To retire comfortably, aim to save **${retirement_savings:.2f}** annually.")
@@ -74,7 +78,6 @@ if house:
     house_savings = income * 0.25
     st.write(f"🏡 Consider saving **${house_savings:.2f}** annually for your dream house.")
 
-# Financial Knowledge Section
 st.subheader("📚 Financial Knowledge Insights")
 st.markdown(
     """
@@ -84,13 +87,6 @@ st.markdown(
     - **Investment Strategy:** Diversify across stocks, bonds, and real estate.
     """
 )
-
-# Data Visualization
-st.subheader("📊 Financial Data Analysis")
-fig, ax = plt.subplots(figsize=(10, 5))
-sns.histplot(df["Savings_Rate"], bins=20, kde=True, color="green", ax=ax)
-ax.set_title("Savings Rate Distribution")
-st.pyplot(fig)
 
 st.markdown("---")
 st.caption("🚀 AI-Powered Financial Insights - Created by AKVSS")
