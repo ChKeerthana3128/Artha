@@ -181,25 +181,21 @@ st.sidebar.write(f"**Salary:** ${salary}")
 
 st.sidebar.info("🔔 Get insights to manage your wealth effectively!")
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.express as px
-from sklearn.linear_model import LinearRegression
 
 # Load dataset
 file_path = "financial_data.csv"
 df = pd.read_csv(file_path)
 
-# Ensure savings column exists and has valid values
-df['savings'] = pd.to_numeric(df.get('savings', pd.Series()), errors='coerce')
-df.dropna(subset=['savings'], inplace=True)
+# Ensure relevant columns exist and have valid values
+df['Desired_Savings_Percentage'] = pd.to_numeric(df.get('Desired_Savings_Percentage', pd.Series()), errors='coerce')
+df['Desired_Savings'] = pd.to_numeric(df.get('Desired_Savings', pd.Series()), errors='coerce')
+df.dropna(subset=['Desired_Savings_Percentage', 'Desired_Savings'], inplace=True)
 
 # Function to calculate financial health score
-def calculate_financial_health(debt, income, savings):
+def calculate_financial_health(debt, income, savings, desired_savings):
     debt_to_income = debt / income if income > 0 else 0
-    savings_rate = savings / income if income > 0 else 0
-    score = (1 - debt_to_income) * 50 + savings_rate * 50
+    savings_gap = (desired_savings - savings) / desired_savings if desired_savings > 0 else 0
+    score = (1 - debt_to_income) * 50 + (1 - savings_gap) * 50
     return max(0, min(100, score))
 
 # Function to predict financial health
@@ -223,24 +219,16 @@ age = st.number_input("Enter your age:", min_value=18, max_value=100, value=25, 
 income = st.number_input("Enter your monthly income (in $):", min_value=500, max_value=100000, value=3000, key="income_input")
 debt = st.number_input("Enter your total monthly debt (in $):", min_value=0, max_value=100000, value=500, key="debt_input")
 savings = st.number_input("Enter your total monthly savings (in $):", min_value=0, max_value=100000, value=500, key="savings_input")
-
-# Allow users to input past savings data manually
-st.subheader("📆 Enter Your Savings History (Last 6 Months)")
-past_savings = []
-for i in range(6):
-    past_savings.append(st.number_input(f"Savings {i+1} month(s) ago:", min_value=0, max_value=100000, value=500, key=f"savings_{i}"))
-manual_savings_data = pd.Series(past_savings[::-1])  # Reverse order for timeline
+desired_savings = st.number_input("Enter your desired monthly savings (in $):", min_value=0, max_value=100000, value=1000, key="desired_savings_input")
 
 # Calculate Financial Health Score
-score = calculate_financial_health(debt, income, savings)
+score = calculate_financial_health(debt, income, savings, desired_savings)
 st.subheader("📊 Financial Health Score")
 st.metric(label="Your Financial Health Score", value=f"{score:.2f}/100")
 
 # Predictive Alerts
-if not df.empty and 'savings' in df.columns and df['savings'].notnull().sum() > 0:
-    predicted_values = predict_financial_health(df['savings'])
-elif len(manual_savings_data) > 1:
-    predicted_values = predict_financial_health(manual_savings_data)
+if not df.empty and 'Desired_Savings' in df.columns and df['Desired_Savings'].notnull().sum() > 0:
+    predicted_values = predict_financial_health(df['Desired_Savings'])
 else:
     predicted_values = np.linspace(savings, savings * 1.05, 6)  # Safe default prediction
 
@@ -270,4 +258,5 @@ st.sidebar.write(f"**Age:** {age}")
 st.sidebar.write(f"**Income:** ${income}")
 st.sidebar.write(f"**Debt:** ${debt}")
 st.sidebar.write(f"**Savings:** ${savings}")
+st.sidebar.write(f"**Desired Savings:** ${desired_savings}")
 st.sidebar.info("🔔 Get AI-driven insights to optimize your financial health!")
