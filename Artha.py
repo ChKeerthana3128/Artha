@@ -20,7 +20,6 @@ st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state
 def load_stock_data(csv_path=os.path.join("archive (3)", "NIFTY CONSUMPTION_daily_data.csv")):
     if not os.path.exists(csv_path):
         st.warning(f"🚨 Stock CSV not found at '{csv_path}'! Using sample data instead.")
-        # Generate sample data as a fallback
         dates = pd.date_range(start="2020-01-01", end="2025-03-09", freq="D")
         df = pd.DataFrame({
             "Date": dates,
@@ -107,7 +106,8 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
     """🧠 Craft your retirement blueprint!"""
-    dream_fund = total_expenses * 12 * 20
+    # Ensure dream_fund is at least 100,000 even if expenses are low
+    dream_fund = max(100000.0, total_expenses * 12 * 20) if total_expenses > 0 else 100000.0
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
     income_growth = 3.0 if years_to_retirement > 20 else 2.0 if years_to_retirement > 10 else 1.0
@@ -148,14 +148,12 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
-    # Load stock data (for Stock Investments tab)
+    # Load stock data
     stock_data = load_stock_data()
     if stock_data is None:
-        st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
-
-    # Train stock model if data is available
-    stock_model, stock_r2 = None, 0.0
-    if stock_data is not None:
+        st.error("Stock Investments tab disabled due to data loading failure.")
+        stock_model, stock_r2 = None, 0.0
+    else:
         stock_model, stock_r2 = train_stock_model(stock_data)
 
     # Initialize session state
@@ -278,8 +276,11 @@ def main():
         # Main content after submission
         if st.session_state.finance_submit:
             st.subheader("🌍 Wealth Roadmap")
-            dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(income, st.session_state.total_expenses, st.session_state.years_to_retirement)
-            desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=dream_fund, step=100000.0)
+            dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
+                income, st.session_state.total_expenses, st.session_state.years_to_retirement
+            )
+            # Ensure the value is at least min_value
+            desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=max(100000.0, dream_fund), step=100000.0)
             savings_rate = st.slider("🎯 Savings Rate (%)", 0.0, 100.0, suggested_rate, step=1.0)
             income_growth = st.slider("📈 Income Growth (%)", 0.0, 10.0, income_growth, step=0.5)
             expense_growth = st.slider("📉 Expense Growth (%)", 0.0, 10.0, expense_growth, step=0.5)
@@ -375,7 +376,7 @@ def main():
                 fig = px.line(stock_data, x='Date', y='Close', title="Price Trend")
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.write("Stock data unavailable.Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")")
+                st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
 
             # Moving Average and Volatility
             if stock_data is not None:
