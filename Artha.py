@@ -148,12 +148,14 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
-    # Load stock data
+    # Load stock data (for Stock Investments tab)
     stock_data = load_stock_data()
     if stock_data is None:
-        st.error("Stock Investments tab disabled due to data loading failure.")
-        stock_model, stock_r2 = None, 0.0
-    else:
+        st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
+
+    # Train stock model if data is available
+    stock_model, stock_r2 = None, 0.0
+    if stock_data is not None:
         stock_model, stock_r2 = train_stock_model(stock_data)
 
     # Initialize session state
@@ -373,7 +375,7 @@ def main():
                 fig = px.line(stock_data, x='Date', y='Close', title="Price Trend")
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.write("Stock data unavailable.")
+                st.write("Stock data unavailable.Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")")
 
             # Moving Average and Volatility
             if stock_data is not None:
@@ -397,7 +399,7 @@ def main():
                 joblib.dump(stock_model, "models/stock_model.pkl")
 
     st.markdown("---")
-    st.write("✨ Powered by WealthWise | Built with ❤️ by xAI")
+    st.write("✨ Powered by Artha | Built with ❤️ by xAI")
 
 if __name__ == "__main__":
     main()
