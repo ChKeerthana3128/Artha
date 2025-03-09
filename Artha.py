@@ -1,4 +1,3 @@
-# 1. Imports
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -16,12 +15,23 @@ warnings.filterwarnings("ignore")
 # 2. Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
 
-# 3. Data Loading (Only for Stock Investments)
+# 3. Data Loading (For Stock Investments)
 @st.cache_data
-def load_stock_data(csv_path="archive (3) /NIFTY CONSUMPTION_daily_data.csv"):
+def load_stock_data(csv_path=os.path.join("archive (3)", "NIFTY CONSUMPTION_daily_data.csv")):
     if not os.path.exists(csv_path):
-        st.error("🚨 Stock CSV not found! Ensure 'NIFTY CONSUMPTION_daily_data.csv' exists.")
-        return None
+        st.warning(f"🚨 Stock CSV not found at '{csv_path}'! Using sample data instead.")
+        # Generate sample data as a fallback
+        dates = pd.date_range(start="2020-01-01", end="2025-03-09", freq="D")
+        df = pd.DataFrame({
+            "Date": dates,
+            "Close": np.random.uniform(1000, 5000, len(dates)),
+            "Open": np.random.uniform(1000, 5000, len(dates)),
+            "High": np.random.uniform(1000, 5000, len(dates)),
+            "Low": np.random.uniform(1000, 5000, len(dates)),
+            "Volume": np.random.randint(10000, 100000, len(dates))
+        })
+        df['Symbol'] = "NIFTY CONSUMPTION"
+        return df.sort_values(by='Date').dropna()
     try:
         df = pd.read_csv(csv_path)
         df = df.rename(columns={"date": "Date", "close": "Close", "open": "Open", "high": "High", "low": "Low", "volume": "Volume"})
@@ -36,9 +46,12 @@ def load_stock_data(csv_path="archive (3) /NIFTY CONSUMPTION_daily_data.csv"):
         st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
-# 4. Model Training (Only for Stock Investments)
+# 4. Model Training (For Stock Investments)
 @st.cache_resource
 def train_stock_model(data):
+    if len(data) < 50:
+        st.error("🚨 Insufficient stock data for training! Need at least 50 data points.")
+        return None, 0.0
     data['Day'] = data['Date'].dt.day
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
@@ -49,7 +62,7 @@ def train_stock_model(data):
     model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
-# 5. Predictive Functions (For Personal Finance, using form inputs directly)
+# 5. Predictive Functions (For Personal Finance)
 def calculate_financial_health_score(income, total_expenses, debt, discretionary):
     """🌡️ Gauge your financial strength!"""
     if income <= 0:
@@ -135,14 +148,12 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
-    # Load stock data (for Stock Investments tab)
+    # Load stock data
     stock_data = load_stock_data()
     if stock_data is None:
-        st.warning("Stock Investments tab will not function without stock data. Proceeding with Personal Finance tab.")
-
-    # Train stock model if data is available
-    stock_model, stock_r2 = None, 0.0
-    if stock_data is not None:
+        st.error("Stock Investments tab disabled due to data loading failure.")
+        stock_model, stock_r2 = None, 0.0
+    else:
         stock_model, stock_r2 = train_stock_model(stock_data)
 
     # Initialize session state
@@ -306,14 +317,10 @@ def main():
             st.subheader("Stock Investments")
             st.write(f"📊 Stock Model R²: {stock_r2:.2f}")
 
-            if st.session_state.stock_submit:
+            if st.session_state.stock_submit and stock_model is not None:
                 future = pd.DataFrame({"Day": [1], "Month": [st.session_state.horizon % 12 or 12], "Year": [2025 + st.session_state.horizon // 12]})
-                if stock_model is not None:
-                    predicted_price = stock_model.predict(future)[0]
-                    st.session_state.predicted_price = predicted_price
-                else:
-                    predicted_price = 0.0
-                    st.session_state.predicted_price = 0.0
+                predicted_price = stock_model.predict(future)[0]
+                st.session_state.predicted_price = predicted_price
             else:
                 predicted_price = 0.0
                 st.session_state.predicted_price = 0.0
@@ -366,7 +373,7 @@ def main():
                 fig = px.line(stock_data, x='Date', y='Close', title="Price Trend")
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.write("Stock data unavailable. Please ensure 'NIFTY CONSUMPTION_daily_data.csv' is present.")
+                st.write("Stock data unavailable.")
 
             # Moving Average and Volatility
             if stock_data is not None:
