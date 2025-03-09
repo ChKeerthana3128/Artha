@@ -106,7 +106,6 @@ def wealth_trajectory(income, total_expenses, savings_rate, years, income_growth
 
 def smart_savings_plan(income, total_expenses, years_to_retirement):
     """🧠 Craft your retirement blueprint!"""
-    # Ensure dream_fund is at least 100,000 even if expenses are low
     dream_fund = max(100000.0, total_expenses * 12 * 20) if total_expenses > 0 else 100000.0
     annual_target = dream_fund / years_to_retirement if years_to_retirement > 0 else dream_fund
     savings_rate = min(max((annual_target / income) * 100 if income > 0 else 10.0, 5.0), 50.0)
@@ -148,6 +147,9 @@ def portfolio_advice(risk_tolerance):
 
 # 7. Main Application
 def main():
+    # Main page title
+    st.title("Artha: Your Financial Compass")
+
     # Load stock data
     stock_data = load_stock_data()
     if stock_data is None:
@@ -279,7 +281,6 @@ def main():
             dream_fund, suggested_rate, income_growth, expense_growth = smart_savings_plan(
                 income, st.session_state.total_expenses, st.session_state.years_to_retirement
             )
-            # Ensure the value is at least min_value
             desired_fund = st.number_input("💎 Desired Retirement Fund (₹)", min_value=100000.0, value=max(100000.0, dream_fund), step=100000.0)
             savings_rate = st.slider("🎯 Savings Rate (%)", 0.0, 100.0, suggested_rate, step=1.0)
             income_growth = st.slider("📈 Income Growth (%)", 0.0, 10.0, income_growth, step=0.5)
