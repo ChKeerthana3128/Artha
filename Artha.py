@@ -91,12 +91,18 @@ def load_financial_data(csv_path="financial_data.csv"):
         df = pd.read_csv(csv_path)
         df.columns = [col.strip().replace('"', '') for col in df.columns]
         col_map = {col.lower(): col for col in df.columns}
-        required_cols = ["income", "projected_savings"]
+        required_cols = ["income"]  # Relax requirement for 'projected_savings'
         missing_cols = [col for col in required_cols if col not in col_map]
         if missing_cols:
             st.error(f"🚨 'financial_data.csv' is missing required columns: {', '.join(missing_cols)}")
             return None
-        df = df.rename(columns={col_map["income"]: "income", col_map["projected_savings"]: "Projected_Savings"})
+        df = df.rename(columns={col_map["income"]: "income"})
+        # If 'projected_savings' is missing, calculate it as a placeholder
+        if "projected_savings" not in col_map:
+            df["Projected_Savings"] = df["income"] * 0.2  # Assume 20% of income as savings
+            st.warning("⚠️ 'projected_savings' not found in CSV. Using 20% of income as a placeholder.")
+        else:
+            df = df.rename(columns={col_map["projected_savings"]: "Projected_Savings"})
         expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
         available_expense_cols = [col for col in expense_cols if col in df.columns]
