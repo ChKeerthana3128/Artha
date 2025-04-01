@@ -126,7 +126,7 @@ def train_stock_model(data):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
-        model.fit(X_train, y_train)
+        model.fit(FX_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
 @st.cache_resource
@@ -636,7 +636,7 @@ def main():
                 
                     st.subheader("📈 Savings Trajectory")
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-                    adjusted_go clickals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
+                    adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
                     x_values = list(range(years_to_retirement + 1))
                     if len(x_values) != len(trajectory) or len(x_values) != len(adjusted_goals):
