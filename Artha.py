@@ -17,6 +17,27 @@ from datetime import datetime
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
 
+# Initialize session state for tour
+if 'first_visit' not in st.session_state:
+    st.session_state['first_visit'] = True
+if 'tour_active' not in st.session_state:
+    st.session_state['tour_active'] = False
+if 'tour_step' not in st.session_state:
+    st.session_state['tour_step'] = 0
+
+# Custom CSS for glowing borders
+st.markdown("""
+    <style>
+    .highlight {
+        border: 3px solid #FFD700;
+        box-shadow: 0 0 10px #FFD700;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: rgba(255, 215, 0, 0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Simulated Investment Dataset
 investment_data = pd.DataFrame({
     "Company": ["Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
@@ -324,7 +345,19 @@ def get_market_news(api_key, tickers="AAPL"):
 def main():
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
-
+    
+    # Financial Wizard Tour
+    if st.session_state['first_visit'] or st.session_state['tour_active']:
+        if st.session_state['tour_step'] == 0:
+            st.markdown("<h3 style='text-align: center;'>Greetings, Wealth Seeker!</h3>", unsafe_allow_html=True)
+            st.write("I’m your Financial Wizard 🧙‍♂️. Let’s explore Artha together!")
+            if st.button("Start Tour"):
+                st.session_state['tour_active'] = True
+                st.session_state['tour_step'] = 1
+            if st.button("Skip Tour"):
+                st.session_state['first_visit'] = False
+                st.session_state['tour_active'] = False
+    
     # Load data
     stock_data = load_stock_data()
     survey_data = load_survey_data()
@@ -344,8 +377,16 @@ def main():
 
     # Sidebar with API Key Explanation
     with st.sidebar:
-        st.header("Dashboard Insights")
-        st.info("Explore your financial future with these tools!")
+        if st.session_state['tour_active'] and st.session_state['tour_step'] == 1:
+            st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+            st.header("Dashboard Insights")
+            st.info("Here’s where you unlock live market data with a magic key! 🔑")
+            if st.button("Next", key="sidebar_next"):
+                st.session_state['tour_step'] = 2
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.header("Dashboard Insights")
+            st.info("Explore your financial future with these tools!")
         if stock_data is not None:
             st.metric("Stock Model Accuracy (R²)", f"{stock_r2:.2f}")
         if survey_data is not None:
@@ -369,11 +410,19 @@ def main():
         """)
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Liveurbed Market Insights"])
 
     with tab1:
-        st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+        if st.session_state['tour_active'] and st.session_state['tour_step'] == 2:
+            st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+            st.header("📈 Stock Market Adventure")
+            st.markdown("Ready to ride the market waves? Pick your horizon and risk level! 🌊")
+            if st.button("Next", key="tab1_next"):
+                st.session_state['tour_step'] = 3
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.header("📈 Stock Market Adventure")
+            st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         
         # Stock Market Form
         with st.form(key="stock_form"):
@@ -424,8 +473,16 @@ def main():
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
 
     with tab2:
-        st.header("🎯 Your Investment Journey")
-        st.markdown("Craft a personalized plan for wealth growth! 🌈")
+        if st.session_state['tour_active'] and st.session_state['tour_step'] == 3:
+            st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+            st.header("🎯 Your Investment Journey")
+            st.markdown("Let’s craft your treasure map—fill in your details! 🗺️")
+            if st.button("Next", key="tab2_next"):
+                st.session_state['tour_step'] = 4
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.header("🎯 Your Investment Journey")
+            st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -533,9 +590,16 @@ def main():
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
     with tab3:
-        st.header("🏡 Retirement Planning")
-        st.markdown("Secure your golden years with smart savings! 🌞")
-    
+        if st.session_state['tour_active'] and st.session_state['tour_step'] == 4:
+            st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+            st.header("🏡 Retirement Planning")
+            st.markdown("Dreaming of golden years? Plan your savings here! 🌞")
+            if st.button("Next", key="tab3_next"):
+                st.session_state['tour_step'] = 5
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.header("🏡 Retirement Planning")
+            st.markdown("Secure your golden years with smart savings! 🌞")  
         # Retirement Planning Form with New Features
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
@@ -631,9 +695,19 @@ def main():
                     st.write("- Consider adjusting investments for higher returns if needed.")
 
     with tab4:
-        st.header("🌐 Live Market Insights")
-        st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-
+        if st.session_state['tour_active'] and st.session_state['tour_step'] == 5:
+            st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+            st.header("🌐 Live Market Insights")
+            st.markdown("Peek into the market’s crystal ball with live updates! 🔮")
+            if st.button("Finish Tour", key="tab4_finish"):
+                st.session_state['tour_active'] = False
+                st.session_state['first_visit'] = False
+                st.balloons()
+                st.write("You’re now a wealth master! Summon me anytime with the 'Help' button.")
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.header("🌐 Live Market Insights")
+            st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
         # Instructions
         with st.expander("How to Use This?"):
             st.write("""
@@ -706,6 +780,12 @@ def main():
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
+
+    # Help Button to Restart Tour
+    if not st.session_state['tour_active']:
+        if st.button("Help 🧙‍♂️"):
+            st.session_state['tour_active'] = True
+            st.session_state['tour_step'] = 1
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
