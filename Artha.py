@@ -13,7 +13,6 @@ import os
 import tempfile
 import plotly.graph_objects as go
 from datetime import datetime
-import pyttsx3  # Import pyttsx3 for text-to-speech
 
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
@@ -287,19 +286,25 @@ def get_market_news(api_key, tickers="AAPL"):
     except Exception as e:
         return None, f"Error fetching news: {str(e)}"
 
-# Text-to-Speech Function
+# Text-to-Speech Function using Web Speech API
 def speak_text(text):
-    try:
-        # Initialize the TTS engine
-        engine = pyttsx3.init()
-        # Set properties (optional: adjust voice, rate, etc.)
-        engine.setProperty('rate', 150)  # Speed of speech
-        engine.setProperty('volume', 0.9)  # Volume (0.0 to 1.0)
-        # Speak the text
-        engine.say(text)
-        engine.runAndWait()
-    except Exception as e:
-        st.error(f"Error with text-to-speech: {str(e)}")
+    # Escape single quotes in the text to avoid breaking the JavaScript
+    text = text.replace("'", "\\'")
+    # JavaScript code to use the Web Speech API
+    js_code = f"""
+    <script>
+        function speakText() {{
+            const utterance = new SpeechSynthesisUtterance('{text}');
+            utterance.rate = 1.0;  // Speed of speech (0.1 to 10)
+            utterance.volume = 0.9;  // Volume (0 to 1)
+            utterance.lang = 'en-US';  // Language
+            window.speechSynthesis.speak(utterance);
+        }}
+        speakText();
+    </script>
+    """
+    # Inject the JavaScript into the Streamlit app
+    st.markdown(js_code, unsafe_allow_html=True)
 
 # Chatbot Class
 class Chatbot:
