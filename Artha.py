@@ -650,25 +650,6 @@ def main():
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-        
-        # Introductory Quiz for Tab 4
-        with st.expander("Quick Quiz: What’s This Tab About?"):
-            st.write("Let’s see what you expect from this tab!")
-            q1 = st.radio(
-                "What does this tab require to work?",
-                ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
-                key="q1_market_intro"
-            )
-            q2 = st.radio(
-                "What can you track here?",
-                ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
-                key="q2_market_intro"
-            )
-            if st.button("Check Answers", key="market_intro_submit"):
-                if q1 == "An API key" and q2 == "Stock prices and market news":
-                    st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
-                else:
-                    st.warning("Not quite! This tab needs an API key to track live stock prices and market news.")
                 st.write("""
                 1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
                 2. **Pick Stocks**: Edit the list below or use these popular ones:
