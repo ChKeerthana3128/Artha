@@ -16,6 +16,7 @@ from datetime import datetime
 
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
+# Suggestion: Update title to "💰 Artha - Your Wealth Buddy" for a friendlier tone
 
 # Simulated Investment Dataset
 investment_data = pd.DataFrame({
@@ -49,6 +50,7 @@ if 'tutorial_progress' not in st.session_state:
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
         st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
+        # Suggestion: Change to st.warning("📉 No stock data yet! Upload 'NIFTY CONSUMPTION_daily_data.csv' to start.") for a softer tone
         return None
     try:
         df = pd.read_csv(csv_path)
@@ -284,6 +286,7 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         os.unlink(tmp_file.name)
     buffer.seek(0)
     return buffer
+    # Suggestion: Simplify PDF generation by removing tempfile and using buffer directly: pdf.output(buffer)
 
 # Fetch Real-Time Stock Data
 def get_stock_data(symbol, api_key):
@@ -318,6 +321,7 @@ def main():
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
     st.write("Welcome, Artha Adventurer! Embark on quests to master your wealth. Earn Wealth Points (WP) and badges along the way!")
+    # Suggestion: Simplify to "Let’s grow your wealth together! Pick a tab to start." for a warmer welcome
 
     # Load data
     stock_data = load_stock_data()
@@ -346,6 +350,7 @@ def main():
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
+        # Suggestion: Add st.progress(total_points / 210) to visualize overall progress
         st.markdown("### 🔑 Your Market Data Pass")
         st.write("To see live stock prices and news, we need a 'key'—think of it like a ticket to unlock real-time market updates!")
         api_key = st.text_input("Paste Your Key Here", value="", type="password", 
@@ -360,14 +365,17 @@ def main():
         3. Copy the code they give you (e.g., 'X7K9P2M4Q1').  
         4. Paste it here and start tracking!
         """)
+        # Suggestion: Shorten to "Paste your Alpha Vantage key here to unlock live data! Get it free at alphavantage.co."
 
     # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
+    # Suggestion: Rename to ["📈 Stocks", "🎯 My Plan", "🏡 Retirement", "🌐 Market"] for brevity
 
     # Tab 1: Stock Investments
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+        # Suggestion: "Grow your money with stocks! Try the guide below."
         
         with st.expander("🎮 Start Your Stock Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["stock"]["completed"]):
             st.write("**Quest: Become a Stock Sage!**")
@@ -400,6 +408,7 @@ def main():
                 st.success("Victory! +20 WP - You’ve unlocked your stock strategy!")
                 st.session_state.tutorial_progress["stock"]["completed"] = True
                 st.write("🏅 **Badge Earned: Stock Sage**")
+            # Suggestion: Integrate tutorial into form below with inline checks (e.g., if horizon == 24: st.success("+10 WP"))
 
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
@@ -441,6 +450,7 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
+            # Suggestion: Add a "What does this mean?" expander with simple explanations of metrics
 
     # Tab 2: Personalized Investment
     with tab2:
@@ -564,6 +574,7 @@ def main():
 
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+            # Suggestion: Add a "Preview Plan" button to show PDF content in-app before download
 
     # Tab 3: Retirement Planning
     with tab3:
