@@ -290,9 +290,7 @@ def get_stock_data(symbol, api_key):
         if "Time Series (5min)" not in data:
             return None, "Error: Invalid symbol, API key, or rate limit reached."
         time_series = data["Time Series (5min)"]
-        df = pd.DataFrame.from_dict(time_series,
-
- orient="index").astype(float)
+        df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
         df.index = pd.to_datetime(df.index)
         df.columns = ["Open", "High", "Low", "Close", "Volume"]
         return df, None
@@ -412,7 +410,6 @@ def main():
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
         
-        # Quiz at the end of Tab 1
         with st.expander("Quick Recap Quiz: Stock Investments"):
             st.write("Let’s see how well you understood this tab!")
             q1_end = st.radio(
@@ -533,7 +530,6 @@ def main():
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
         
-        # Quiz at the end of Tab 2
         with st.expander("Quick Recap Quiz: Personalized Investment"):
             st.write("Let’s recap what you learned from this tab!")
             q1_end = st.radio(
@@ -609,10 +605,6 @@ def main():
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
                     
-                    st.write(f"Debug: years_to_retirement = {years_to_retirement}")
-                    st.write(f"Debug: future_expenses = {future_expenses}, annual_additional_income = {annual_additional_income}")
-                    st.write(f"Debug: adjusted_goals = {adjusted_goals}")
-                    
                     adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
                     
                     x_values = list(range(years_to_retirement + 1))
@@ -637,7 +629,6 @@ def main():
                     st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
                     st.write("- Consider adjusting investments for higher returns if needed.")
         
-        # Quiz at the end of Tab 3
         with st.expander("Quick Recap Quiz: Retirement Planning"):
             st.write("Let’s review what you’ve learned here!")
             q1_end = st.radio(
@@ -659,6 +650,20 @@ def main():
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
+        
+        # Introductory Quiz for Tab 4
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Let’s see what you expect from this tab!")
+            q1 = st.radio(
+                "What does this tab require to work?",
+                ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
+                key="q1_market_intro"
+            )
+            q2 = st.radio(
+                "What can you track here?",
+                ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
+                key="q2_market_intro"
+            )
             if st.button("Check Answers", key="market_intro_submit"):
                 if q1 == "An API key" and q2 == "Stock prices and market news":
                     st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
