@@ -594,7 +594,7 @@ def main():
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-                st.write("""
+        st.write("""
                 1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
                 2. **Pick Stocks**: Edit the list below or use these popular ones:
                    - AAPL (Apple)
@@ -603,7 +603,7 @@ def main():
                    - TSLA (Tesla)
                 3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
                 """)
-                st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
+        st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
 
         if not api_key:
             st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
