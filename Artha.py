@@ -13,6 +13,7 @@ import os
 import tempfile
 import plotly.graph_objects as go
 from datetime import datetime
+import pyttsx3  # Import pyttsx3 for text-to-speech
 
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
@@ -286,45 +287,59 @@ def get_market_news(api_key, tickers="AAPL"):
     except Exception as e:
         return None, f"Error fetching news: {str(e)}"
 
+# Text-to-Speech Function
+def speak_text(text):
+    try:
+        # Initialize the TTS engine
+        engine = pyttsx3.init()
+        # Set properties (optional: adjust voice, rate, etc.)
+        engine.setProperty('rate', 150)  # Speed of speech
+        engine.setProperty('volume', 0.9)  # Volume (0.0 to 1.0)
+        # Speak the text
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        st.error(f"Error with text-to-speech: {str(e)}")
+
 # Chatbot Class
 class Chatbot:
     def __init__(self):
         self.tours = {
             "📈 Stock Investments": """
-                Welcome to the **Stock Investments** tab! 🌟 Here, you can explore the NIFTY CONSUMPTION index and plan your stock market journey.  
-                - **What to Do**: Enter your investment amount, horizon, risk appetite, and goals.  
-                - **Features**: See predicted prices, growth potential, and a cool trend chart!  
-                - **Try This**: Set a ₹6000 investment for 12 months with 'Medium' risk and 'Wealth growth' goal, then hit 'Explore Market'.  
+                Welcome to the Stock Investments tab! Here, you can explore the NIFTY CONSUMPTION index and plan your stock market journey.  
+                - What to Do: Enter your investment amount, horizon, risk appetite, and goals.  
+                - Features: See predicted prices, growth potential, and a cool trend chart!  
+                - Try This: Set a ₹6000 investment for 12 months with 'Medium' risk and 'Wealth growth' goal, then hit 'Explore Market'.  
                 Ready to dive in? Click below to start!
             """,
             "🎯 Personalized Investment": """
-                Hey there! This is your **Personalized Investment** tab! 🌈 It’s all about crafting a plan just for YOU.  
-                - **What to Do**: Fill in your income, expenses, goals, and risk tolerance.  
-                - **Features**: Get a savings breakdown pie chart, investment options, and a timeline to your goal!  
-                - **Try This**: Input ₹50,000 income, ₹20,000 essentials, and a ₹1,00,000 goal over 3 years.  
+                Hey there! This is your Personalized Investment tab! It’s all about crafting a plan just for YOU.  
+                - What to Do: Fill in your income, expenses, goals, and risk tolerance.  
+                - Features: Get a savings breakdown pie chart, investment options, and a timeline to your goal!  
+                - Try This: Input ₹50,000 income, ₹20,000 essentials, and a ₹1,00,000 goal over 3 years.  
                 Want to see your plan? Hit 'Get Your Plan' after the tour!
             """,
             "🏡 Retirement Planning": """
-                Planning for your golden years? Welcome to **Retirement Planning**! 🌞  
-                - **What to Do**: Enter your age, income, savings, and retirement expenses.  
-                - **Features**: Visualize your wealth growth vs. inflation-adjusted goals, plus tips!  
-                - **Try This**: Set age 30, ₹50,000 income, ₹20,000 expenses, retiring at 65.  
+                Planning for your golden years? Welcome to Retirement Planning!  
+                - What to Do: Enter your age, income, savings, and retirement expenses.  
+                - Features: Visualize your wealth growth vs. inflation-adjusted goals, plus tips!  
+                - Try This: Set age 30, ₹50,000 income, ₹20,000 expenses, retiring at 65.  
                 Ready to secure your future? Click 'Plan My Retirement' when we’re done!
             """,
             "🌐 Live Market Insights": """
-                Time to go live with **Live Market Insights**! 🌍  
-                - **What to Do**: Add your Alpha Vantage API key and stock symbols (like AAPL, TSLA).  
-                - **Features**: Real-time stock prices, charts, and market news headlines!  
-                - **Try This**: Paste your API key and track 'AAPL' and 'TSLA'.  
+                Time to go live with Live Market Insights!  
+                - What to Do: Add your Alpha Vantage API key and stock symbols (like AAPL, TSLA).  
+                - Features: Real-time stock prices, charts, and market news headlines!  
+                - Try This: Paste your API key and track 'AAPL' and 'TSLA'.  
                 Need a key? Check the sidebar for how to get one—it’s free!
             """
         }
         self.responses = {
-            "hi": "Hello! I’m your Artha guide. How can I assist you today? 😊",
+            "hi": "Hello! I’m your Artha guide. How can I assist you today?",
             "what can you do": "I’m here to give you a tour of Artha, answer questions, and help you navigate! Try asking about a tab or say 'start tour'!",
             "start tour": "Awesome! Let’s explore Artha together. Which tab would you like to start with? Pick one below!",
-            "thanks": "You’re welcome! Anything else I can help with? 😊",
-            "bye": "See you later! Enjoy mastering your finances with Artha! 👋"
+            "thanks": "You’re welcome! Anything else I can help with?",
+            "bye": "See you later! Enjoy mastering your finances with Artha!"
         }
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = ["👋 Hi! I’m your Artha Chatbot. Say 'start tour' to explore the dashboard or ask me anything!"]
@@ -337,7 +352,7 @@ class Chatbot:
             for tab_name in self.tours:
                 if tab_name.lower() in user_input:
                     return self.tours[tab_name]
-            return "Which tab do you want to know about? I can explain 📈 Stock Investments, 🎯 Personalized Investment, 🏡 Retirement Planning, or 🌐 Live Market Insights!"
+            return "Which tab do you want to know about? I can explain Stock Investments, Personalized Investment, Retirement Planning, or Live Market Insights!"
         elif "how" in user_input:
             return "I can guide you step-by-step! Tell me what you want to do—like 'how to plan retirement' or 'how to track stocks'!"
         else:
@@ -419,7 +434,9 @@ def main():
 
     with tab1:
         if st.button("Chatbot: Explain This Tab", key="tab1_help"):
-            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['📈 Stock Investments']}")
+            explanation = chatbot.tours['📈 Stock Investments']
+            st.session_state.chat_history.append(f"**Chatbot**: {explanation}")
+            speak_text(explanation)  # Speak the explanation
             st.rerun()
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
@@ -468,7 +485,9 @@ def main():
 
     with tab2:
         if st.button("Chatbot: Explain This Tab", key="tab2_help"):
-            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🎯 Personalized Investment']}")
+            explanation = chatbot.tours['🎯 Personalized Investment']
+            st.session_state.chat_history.append(f"**Chatbot**: {explanation}")
+            speak_text(explanation)  # Speak the explanation
             st.rerun()
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
@@ -568,7 +587,9 @@ def main():
 
     with tab3:
         if st.button("Chatbot: Explain This Tab", key="tab3_help"):
-            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🏡 Retirement Planning']}")
+            explanation = chatbot.tours['🏡 Retirement Planning']
+            st.session_state.chat_history.append(f"**Chatbot**: {explanation}")
+            speak_text(explanation)  # Speak the explanation
             st.rerun()
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
@@ -615,7 +636,7 @@ def main():
                 
                     st.subheader("📈 Savings Trajectory")
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-                    adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
+                    adjusted_go clickals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
                     x_values = list(range(years_to_retirement + 1))
                     if len(x_values) != len(trajectory) or len(x_values) != len(adjusted_goals):
@@ -636,7 +657,9 @@ def main():
 
     with tab4:
         if st.button("Chatbot: Explain This Tab", key="tab4_help"):
-            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🌐 Live Market Insights']}")
+            explanation = chatbot.tours['🌐 Live Market Insights']
+            st.session_state.chat_history.append(f"**Chatbot**: {explanation}")
+            speak_text(explanation)  # Speak the explanation
             st.rerun()
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
