@@ -716,7 +716,7 @@ def main():
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
     st.markdown("---")
-    st.write("Powered by WealthWise | Built with love by xAI")
+    st.write("Powered by Artha )
 
 if __name__ == "__main__":
     main()
