@@ -756,6 +756,334 @@ def main():
         <p style="color: orange;">⚠️ Your browser does not support text-to-speech. Please use a modern browser like Chrome or Edge to enable the voice feature.</p>
     </div>
     """, unsafe_allow_html=True)
+
+# Add this at the top of your file with other imports
+import streamlit as st
+
+# Inside the Chatbot class, update the tours to include steps for the visual tour
+class Chatbot:
+    def __init__(self):
+        # Define visual tour steps for each tab (element IDs and voice narration)
+        self.tours = {
+            "📈 Stock Investments": [
+                {
+                    "element_id": "stock_form",  # ID of the form
+                    "voice": "This is the form where you enter your investment details, like horizon and amount."
+                },
+                {
+                    "element_id": "risk_tolerance",  # ID of the risk appetite dropdown
+                    "voice": "Here, you can select your risk appetite: low, medium, or high."
+                },
+                {
+                    "element_id": "goals",  # ID of the goals multiselect
+                    "voice": "Choose your investment goals, such as wealth growth or emergency fund."
+                },
+                {
+                    "element_id": "submit_stock_form",  # ID of the submit button
+                    "voice": "Click this button to explore the market and see your investment strategy."
+                }
+            ],
+            "🎯 Personalized Investment": [
+                {
+                    "element_id": "investment_form",
+                    "voice": "Enter your financial details here, like income and expenses."
+                },
+                {
+                    "element_id": "goals_personalized",
+                    "voice": "Select your goals to tailor your investment plan."
+                },
+                {
+                    "element_id": "submit_investment_form",
+                    "voice": "Click here to get your personalized investment plan."
+                }
+            ],
+            "🏡 Retirement Planning": [
+                {
+                    "element_id": "retirement_form",
+                    "voice": "Input your age, income, and retirement expenses in this form."
+                },
+                {
+                    "element_id": "additional_income",
+                    "voice": "Add any additional income sources you expect in retirement."
+                },
+                {
+                    "element_id": "submit_retirement_form",
+                    "voice": "Click this button to see your retirement outlook."
+                }
+            ],
+            "🌐 Live Market Insights": [
+                {
+                    "element_id": "portfolio_input",
+                    "voice": "Enter stock symbols here to track your portfolio."
+                },
+                {
+                    "element_id": "track_button",
+                    "voice": "Click this button to fetch live stock prices and news."
+                }
+            ]
+        }
+        self.responses = {
+            "hi": "Hello! I’m your Artha guide. How can I assist you today?",
+            "what can you do": "I’m here to give you a tour of Artha, answer questions, and help you navigate! Try asking about a tab or say 'start tour'!",
+            "start tour": "Awesome! Let’s explore Artha together. Which tab would you like to start with? Pick one below!",
+            "thanks": "You’re welcome! Anything else I can help with?",
+            "bye": "See you later! Enjoy mastering your finances with Artha!"
+        }
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = ["👋 Hi! I’m your Artha Chatbot. Say 'start tour' to explore the dashboard or ask me anything!"]
+
+    def get_response(self, user_input):
+        user_input = user_input.lower().strip()
+        if user_input in self.responses:
+            return self.responses[user_input]
+        elif "tab" in user_input:
+            for tab_name in self.tours:
+                if tab_name.lower() in user_input:
+                    return f"Let's take a visual tour of {tab_name}!"
+            return "Which tab do you want to know about? I can explain Stock Investments, Personalized Investment, Retirement Planning, or Live Market Insights!"
+        elif "how" in user_input:
+            return "I can guide you step-by-step! Tell me what you want to do—like 'how to plan retirement' or 'how to track stocks'!"
+        else:
+            return "Hmm, I’m not sure about that. Try asking about a tab (e.g., 'tell me about Stock Investments') or say 'start tour'!"
+
+    def display_tour_buttons(self):
+        st.write("Pick a tab to tour:")
+        for tab_name in self.tours:
+            if st.button(tab_name, key=f"tour_{tab_name}"):
+                st.session_state.chat_history.append(f"**You**: Let’s tour {tab_name}")
+                st.session_state.chat_history.append(f"**Chatbot**: Let's take a visual tour of {tab_name}!")
+
+# Update the speak_text function to handle the tour steps
+def speak_text(text):
+    text = text.replace("'", "\\'")
+    js_code = f"""
+    <script>
+        function speakText() {{
+            if ('speechSynthesis' in window) {{
+                const utterance = new SpeechSynthesisUtterance('{text}');
+                utterance.rate = 1.0;
+                utterance.volume = 0.9;
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            }}
+        }}
+        speakText();
+    </script>
+    """
+    st.markdown(js_code, unsafe_allow_html=True)
+
+# New function to start the visual tour
+def start_visual_tour(tab_name, tour_steps):
+    # JavaScript to highlight elements and play voice narration
+    js_code = """
+    <style>
+        .highlight {
+            border: 3px solid #ffcc00;
+            box-shadow: 0 0 10px #ffcc00;
+            transition: all 0.5s ease;
+            transform: scale(1.05);
+            z-index: 1000;
+            position: relative;
+        }
+    </style>
+    <script>
+        function startTour(steps) {
+            let currentStep = 0;
+
+            function highlightElement(step) {
+                // Remove highlight from previous element
+                document.querySelectorAll('.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+
+                // Highlight the current element
+                const element = document.getElementById(steps[step].element_id);
+                if (element) {
+                    element.classList.add('highlight');
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Play voice narration
+                    const utterance = new SpeechSynthesisUtterance(steps[step].voice);
+                    utterance.rate = 1.0;
+                    utterance.volume = 0.9;
+                    utterance.lang = 'en-US';
+                    utterance.onend = () => {
+                        // Move to the next step after voice narration ends
+                        currentStep++;
+                        if (currentStep < steps.length) {
+                            setTimeout(() => highlightElement(currentStep), 500);
+                        } else {
+                            // Remove highlight from the last element
+                            document.querySelectorAll('.highlight').forEach(el => {
+                                el.classList.remove('highlight');
+                            });
+                        }
+                    };
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+
+            // Start the tour
+            highlightElement(currentStep);
+        }
+
+        // Convert tour steps to JavaScript object
+        const tourSteps = %s;
+        startTour(tourSteps);
+    </script>
+    """
+    # Convert tour steps to JSON string for JavaScript
+    import json
+    tour_steps_json = json.dumps(tour_steps)
+    st.markdown(js_code % tour_steps_json, unsafe_allow_html=True)
+
+# Update the tab sections to include IDs for elements
+with tab1:
+    if st.button("Chatbot: Explain This Tab", key="tab1_help"):
+        tour_steps = chatbot.tours['📈 Stock Investments']
+        start_visual_tour('📈 Stock Investments', tour_steps)
+        st.session_state.chat_history.append(f"**Chatbot**: Let's take a visual tour of Stock Investments!")
+        st.rerun()
+    st.header("📈 Stock Market Adventure")
+    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+    
+    with st.form(key="stock_form"):
+        st.markdown('<div id="stock_form">', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12)
+            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0)
+        with col2:
+            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], key="risk_tolerance")
+            goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"], key="goals")
+        submit = st.form_submit_button("🚀 Explore Market", key="submit_stock_form")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# Similarly update other tabs (tab2, tab3, tab4) by adding IDs to elements
+with tab2:
+    if st.button("Chatbot: Explain This Tab", key="tab2_help"):
+        tour_steps = chatbot.tours['🎯 Personalized Investment']
+        start_visual_tour('🎯 Personalized Investment', tour_steps)
+        st.session_state.chat_history.append(f"**Chatbot**: Let's take a visual tour of Personalized Investment!")
+        st.rerun()
+    st.header("🎯 Your Investment Journey")
+    st.markdown("Craft a personalized plan for wealth growth! 🌈")
+    with st.form(key="investment_form"):
+        st.markdown('<div id="investment_form">', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("👤 Your Name")
+            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+            essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0)
+            non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
+            debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
+        with col2:
+            goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"], key="goals_personalized")
+            goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
+            risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
+            horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
+            invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50)
+        submit = st.form_submit_button("🚀 Get Your Plan", key="submit_investment_form")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+with tab3:
+    if st.button("Chatbot: Explain This Tab", key="tab3_help"):
+        tour_steps = chatbot.tours['🏡 Retirement Planning']
+        start_visual_tour('🏡 Retirement Planning', tour_steps)
+        st.session_state.chat_history.append(f"**Chatbot**: Let's take a visual tour of Retirement Planning!")
+        st.rerun()
+    st.header("🏡 Retirement Planning")
+    st.markdown("Secure your golden years with smart savings! 🌞")
+    
+    with st.form(key="retirement_form"):
+        st.markdown('<div id="retirement_form">', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
+            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+            current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
+        with col2:
+            retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
+            monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
+            inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0)
+        
+        st.subheader("Additional Income Sources in Retirement")
+        st.markdown('<div id="additional_income">', unsafe_allow_html=True)
+        income_sources = st.multiselect("Select Sources", ["Pension", "Rental Income", "Part-Time Work", "Other"])
+        additional_income = 0
+        for source in income_sources:
+            amount = st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source)
+            additional_income += amount
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        submit = st.form_submit_button("🚀 Plan My Retirement", key="submit_retirement_form")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+with tab4:
+    if st.button("Chatbot: Explain This Tab", key="tab4_help"):
+        tour_steps = chatbot.tours['🌐 Live Market Insights']
+        start_visual_tour('🌐 Live Market Insights', tour_steps)
+        st.session_state.chat_history.append(f"**Chatbot**: Let's take a visual tour of Live Market Insights!")
+        st.rerun()
+    st.header("🌐 Live Market Insights")
+    st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
+
+    with st.expander("How to Use This?"):
+        st.write("""
+        1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
+        2. **Pick Stocks**: Edit the list below or use these popular ones:
+           - AAPL (Apple)
+           - MSFT (Microsoft)
+           - GOOGL (Google)
+           - TSLA (Tesla)
+        3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
+        """)
+        st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
+
+    if not api_key:
+        st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
+    else:
+        st.subheader("Live Portfolio Tracking")
+        portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA", key="portfolio_input")
+        portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
+        
+        if st.button("Track Portfolio & News", key="track_button"):
+            total_value = 0
+            for symbol in portfolio:
+                with st.spinner(f"Fetching live data for {symbol}..."):
+                    df, error = get_stock_data(symbol, api_key)
+                    if error or df is None:
+                        st.error(f"{symbol}: {error}")
+                        continue
+                    
+                    latest_price = df["Close"].iloc[0]
+                    previous_price = df["Close"].iloc[-1]
+                    performance = ((latest_price - previous_price) / previous_price) * 100
+                    total_value += latest_price
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(label=f"{symbol} Current Price", value=f"${latest_price:.2f}", delta=f"{performance:.2f}%", delta_color="normal")
+                    with col2:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+                        fig.update_layout(title=f"{symbol} Live Price (Last 100 intervals)", xaxis_title="Time", yaxis_title="Price (USD)")
+                        st.plotly_chart(fig, use_container_width=True)
+            
+            st.success(f"Total Portfolio Value: ${total_value:.2f}")
+
+            st.subheader("Latest Market News")
+            ticker_for_news = portfolio[0] if portfolio else "AAPL"
+            with st.spinner(f"Fetching news for {ticker_for_news}..."):
+                news_feed, error = get_market_news(api_key, ticker_for_news)
+                if error or news_feed is None:
+                    st.warning(error)
+                else:
+                    for article in news_feed[:5]:
+                        st.write(f"**{article['title']}**")
+                        st.write(article["summary"])
+                        st.write(f"[Read more]({article['url']})")
+            st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
 
