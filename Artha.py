@@ -378,37 +378,45 @@ def main():
         # Suggestion: "Grow your money with stocks! Try the guide below."
         
         with st.expander("🎮 Start Your Stock Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["stock"]["completed"]):
-            st.write("**Quest: Become a Stock Sage!**")
-            st.write(f"Wealth Points: {st.session_state.tutorial_progress['stock']['points']}/50")
-            progress = st.session_state.tutorial_progress["stock"]["points"] / 50
-            st.progress(progress)
-            
-            st.markdown("### Step 1: Set Your Horizon")
-            st.write("Adjust the 'Investment Horizon' slider to 24 months.")
-            if st.button("I set it to 24 months!", key="stock_step1"):
-                st.session_state.tutorial_progress["stock"]["points"] += 10
-                st.success("Great! +10 WP - You’ve set your adventure timeline!")
-
-            st.markdown("### Step 2: Pick Your Risk")
-            st.write("Choose 'Medium' risk tolerance from the dropdown.")
-            if st.button("I chose Medium risk!", key="stock_step2"):
-                st.session_state.tutorial_progress["stock"]["points"] += 10
-                st.success("Nice! +10 WP - You’re balancing risk and reward!")
-
-            st.markdown("### Step 3: Select a Goal")
-            st.write("Pick 'Wealth growth' as your goal.")
-            if st.button("I picked Wealth growth!", key="stock_step3"):
-                st.session_state.tutorial_progress["stock"]["points"] += 10
-                st.success("Awesome! +10 WP - Your goal is set!")
-
-            st.markdown("### Step 4: Explore the Market")
-            st.write("Click 'Explore Market' to see your strategy.")
-            if st.button("I explored the market!", key="stock_step4"):
-                st.session_state.tutorial_progress["stock"]["points"] += 20
-                st.success("Victory! +20 WP - You’ve unlocked your stock strategy!")
-                st.session_state.tutorial_progress["stock"]["completed"] = True
-                st.write("🏅 **Badge Earned: Stock Sage**")
-            # Suggestion: Integrate tutorial into form below with inline checks (e.g., if horizon == 24: st.success("+10 WP"))
+    if 'stock_step' not in st.session_state:
+        st.session_state.stock_step = 0
+    st.write("**Quest: Become a Stock Sage!**")
+    st.write(f"Wealth Points: {st.session_state.tutorial_progress['stock']['points']}/50")
+    progress = st.session_state.tutorial_progress["stock"]["points"] / 50
+    st.progress(progress)
+    
+    steps = [
+        ("Set Your Horizon", "Adjust the 'Investment Horizon' slider to 24 months below.", lambda h, r, g: h == 24),
+        ("Pick Your Risk", "Choose 'Medium' risk tolerance from the dropdown below.", lambda h, r, g: r == "Medium"),
+        ("Select a Goal", "Pick 'Wealth growth' as your goal in the multiselect below.", lambda h, r, g: "Wealth growth" in g),
+        ("Explore the Market", "Click 'Explore Market' in the form below to see your strategy!", lambda h, r, g: False)
+    ]
+    current_step = steps[st.session_state.stock_step]
+    st.markdown(f"### {current_step[0]}")
+    st.write(f"👉 {current_step[1]}")
+    
+    with st.form(key="stock_form_guided"):
+        col1, col2 = st.columns(2)
+        with col1:
+            horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
+            invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0)
+        with col2:
+            risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"])
+            goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
+        submit = st.form_submit_button("🚀 Explore Market")
+    
+    if st.session_state.stock_step < len(steps) - 1:
+        if current_step[2](horizon, risk_tolerance, goals) and st.button("Next", key=f"stock_next_{st.session_state.stock_step}"):
+            st.session_state.tutorial_progress["stock"]["points"] += 10
+            st.session_state.stock_step += 1
+            st.success(f"Step completed! +10 WP")
+            st.rerun()
+    elif st.session_state.stock_step == len(steps) - 1 and submit:
+        st.session_state.tutorial_progress["stock"]["points"] += 20
+        st.session_state.tutorial_progress["stock"]["completed"] = True
+        st.success("Quest completed! +20 WP")
+        st.write("🏅 **Badge Earned: Stock Sage**")
+        st.rerun()
 
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
@@ -458,36 +466,51 @@ def main():
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         
         with st.expander("🎮 Start Your Investment Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["personalized"]["completed"]):
-            st.write("**Quest: Forge Your Wealth Path!**")
-            st.write(f"Wealth Points: {st.session_state.tutorial_progress['personalized']['points']}/60")
-            progress = st.session_state.tutorial_progress["personalized"]["points"] / 60
-            st.progress(progress)
-            
-            st.markdown("### Step 1: Enter Your Name")
-            st.write("Type your name (e.g., 'Adventurer') in the text box.")
-            if st.button("I entered my name!", key="personalized_step1"):
-                st.session_state.tutorial_progress["personalized"]["points"] += 10
-                st.success("Well done! +10 WP - You’ve claimed your identity!")
-
-            st.markdown("### Step 2: Set Your Income")
-            st.write("Input ₹50,000 as your monthly income.")
-            if st.button("I set my income!", key="personalized_step2"):
-                st.session_state.tutorial_progress["personalized"]["points"] += 10
-                st.success("Great! +10 WP - Your treasure chest is growing!")
-
-            st.markdown("### Step 3: Add Expenses")
-            st.write("Set Essentials to ₹20,000 and Non-Essentials to ₹10,000.")
-            if st.button("I added expenses!", key="personalized_step3"):
-                st.session_state.tutorial_progress["personalized"]["points"] += 20
-                st.success("Nice! +20 WP - You’ve mapped your spending!")
-
-            st.markdown("### Step 4: Get Your Plan")
-            st.write("Click 'Get Your Plan' to see your strategy.")
-            if st.button("I got my plan!", key="personalized_step4"):
-                st.session_state.tutorial_progress["personalized"]["points"] += 20
-                st.success("Epic! +20 WP - You’ve forged your wealth path!")
-                st.session_state.tutorial_progress["personalized"]["completed"] = True
-                st.write("🏅 **Badge Earned: Wealth Forger**")
+    if 'personalized_step' not in st.session_state:
+        st.session_state.personalized_step = 0
+    st.write("**Quest: Forge Your Wealth Path!**")
+    st.write(f"Wealth Points: {st.session_state.tutorial_progress['personalized']['points']}/60")
+    progress = st.session_state.tutorial_progress["personalized"]["points"] / 60
+    st.progress(progress)
+    
+    steps = [
+        ("Enter Your Name", "Type 'Adventurer' in the name field below.", lambda n, i, e, ne: n == "Adventurer"),
+        ("Set Your Income", "Input ₹50,000 as your monthly income below.", lambda n, i, e, ne: i == 50000),
+        ("Add Expenses", "Set Essentials to ₹20,000 and Non-Essentials to ₹10,000 below.", lambda n, i, e, ne: e == 20000 and ne == 10000),
+        ("Get Your Plan", "Click 'Get Your Plan' in the form below to see your strategy!", lambda n, i, e, ne: False)
+    ]
+    current_step = steps[st.session_state.personalized_step]
+    st.markdown(f"### {current_step[0]}")
+    st.write(f"👉 {current_step[1]}")
+    
+    with st.form(key="investment_form_guided"):
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
+            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+            essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0)
+            non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
+            debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
+        with col2:
+            goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
+            goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
+            risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
+            horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
+            invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50)
+        submit = st.form_submit_button("🚀 Get Your Plan")
+    
+    if st.session_state.personalized_step < len(steps) - 1:
+        if current_step[2](name, income, essentials, non_essentials) and st.button("Next", key=f"personalized_next_{st.session_state.personalized_step}"):
+            st.session_state.tutorial_progress["personalized"]["points"] += (20 if st.session_state.personalized_step == 2 else 10)
+            st.session_state.personalized_step += 1
+            st.success(f"Step completed! +{20 if st.session_state.personalized_step - 1 == 2 else 10} WP")
+            st.rerun()
+    elif st.session_state.personalized_step == len(steps) - 1 and submit:
+        st.session_state.tutorial_progress["personalized"]["points"] += 20
+        st.session_state.tutorial_progress["personalized"]["completed"] = True
+        st.success("Quest completed! +20 WP")
+        st.write("🏅 **Badge Earned: Wealth Forger**")
+        st.rerun()
 
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
@@ -582,37 +605,50 @@ def main():
         st.markdown("Secure your golden years with smart savings! 🌞")
         
         with st.expander("🎮 Start Your Retirement Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["retirement"]["completed"]):
-            st.write("**Quest: Secure Your Golden Vault!**")
-            st.write(f"Wealth Points: {st.session_state.tutorial_progress['retirement']['points']}/50")
-            progress = st.session_state.tutorial_progress["retirement"]["points"] / 50
-            st.progress(progress)
-            
-            st.markdown("### Step 1: Set Your Age")
-            st.write("Enter your current age as 30.")
-            if st.button("I set my age!", key="retirement_step1"):
-                st.session_state.tutorial_progress["retirement"]["points"] += 10
-                st.success("Good start! +10 WP - Your journey begins!")
-
-            st.markdown("### Step 2: Plan Retirement Age")
-            st.write("Slide 'Retirement Age' to 65.")
-            if st.button("I set retirement age!", key="retirement_step2"):
-                st.session_state.tutorial_progress["retirement"]["points"] += 10
-                st.success("Nice! +10 WP - Your future is taking shape!")
-
-            st.markdown("### Step 3: Add Expenses")
-            st.write("Set 'Expected Monthly Expenses' to ₹30,000.")
-            if st.button("I added expenses!", key="retirement_step3"):
-                st.session_state.tutorial_progress["retirement"]["points"] += 10
-                st.success("Great! +10 WP - You’ve planned your retirement life!")
-
-            st.markdown("### Step 4: Plan Retirement")
-            st.write("Click 'Plan My Retirement' to see your forecast.")
-            if st.button("I planned my retirement!", key="retirement_step4"):
-                st.session_state.tutorial_progress["retirement"]["points"] += 20
-                st.success("Success! +20 WP - Your golden vault is secure!")
-                st.session_state.tutorial_progress["retirement"]["completed"] = True
-                st.write("🏅 **Badge Earned: Retirement Guardian**")
-
+    if 'retirement_step' not in st.session_state:
+        st.session_state.retirement_step = 0
+    st.write("**Quest: Secure Your Golden Vault!**")
+    st.write(f"Wealth Points: {st.session_state.tutorial_progress['retirement']['points']}/50")
+    progress = st.session_state.tutorial_progress["retirement"]["points"] / 50
+    st.progress(progress)
+    
+    steps = [
+        ("Set Your Age", "Enter your current age as 30 below.", lambda a, r, e: a == 30),
+        ("Plan Retirement Age", "Slide 'Retirement Age' to 65 below.", lambda a, r, e: r == 65),
+        ("Add Expenses", "Set 'Expected Monthly Expenses' to ₹30,000 below.", lambda a, r, e: e == 30000),
+        ("Plan Retirement", "Click 'Plan My Retirement' in the form below to see your forecast!", lambda a, r, e: False)
+    ]
+    current_step = steps[st.session_state.retirement_step]
+    st.markdown(f"### {current_step[0]}")
+    st.write(f"👉 {current_step[1]}")
+    
+    with st.form(key="retirement_form_guided"):
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
+            income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+            current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
+        with col2:
+            retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
+            monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
+            inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0)
+        st.subheader("Additional Income Sources in Retirement")
+        income_sources = st.multiselect("Select Sources", ["Pension", "Rental Income", "Part-Time Work", "Other"])
+        additional_income = sum([st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source) for source in income_sources])
+        submit = st.form_submit_button("🚀 Plan My Retirement")
+    
+    if st.session_state.retirement_step < len(steps) - 1:
+        if current_step[2](age, retirement_age, monthly_expenses) and st.button("Next", key=f"retirement_next_{st.session_state.retirement_step}"):
+            st.session_state.tutorial_progress["retirement"]["points"] += 10
+            st.session_state.retirement_step += 1
+            st.success(f"Step completed! +10 WP")
+            st.rerun()
+    elif st.session_state.retirement_step == len(steps) - 1 and submit:
+        st.session_state.tutorial_progress["retirement"]["points"] += 20
+        st.session_state.tutorial_progress["retirement"]["completed"] = True
+        st.success("Quest completed! +20 WP")
+        st.write("🏅 **Badge Earned: Retirement Guardian**")
+        st.rerun()
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -675,36 +711,42 @@ def main():
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
         
         with st.expander("🎮 Start Your Market Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["market"]["completed"]):
-            st.write("**Quest: Unlock the Market Oracle!**")
-            st.write(f"Wealth Points: {st.session_state.tutorial_progress['market']['points']}/50")
-            progress = st.session_state.tutorial_progress["market"]["points"] / 50
-            st.progress(progress)
-            
-            st.markdown("### Step 1: Add Your Key")
-            st.write("Paste your Alpha Vantage key in the sidebar.")
-            if st.button("I added my key!", key="market_step1"):
-                if api_key:
-                    st.session_state.tutorial_progress["market"]["points"] += 10
-                    st.success("Excellent! +10 WP - You’ve unlocked the market gates!")
-                else:
-                    st.error("No key detected! Add it in the sidebar first.")
-
-            st.markdown("### Step 2: Enter a Stock")
-            st.write("Type 'AAPL' in the stock symbols text area.")
-            if st.button("I entered AAPL!", key="market_step2"):
+    if 'market_step' not in st.session_state:
+        st.session_state.market_step = 0
+    st.write("**Quest: Unlock the Market Oracle!**")
+    st.write(f"Wealth Points: {st.session_state.tutorial_progress['market']['points']}/50")
+    progress = st.session_state.tutorial_progress["market"]["points"] / 50
+    st.progress(progress)
+    
+    steps = [
+        ("Add Your Key", "Paste your Alpha Vantage key in the sidebar.", lambda s: bool(api_key)),
+        ("Enter a Stock", "Type 'AAPL' in the stock symbols text area below.", lambda s: "AAPL" in [x.strip().upper() for x in s.split("\n")]),
+        ("Track the Market", "Click 'Track Portfolio & News' below to see live data!", lambda s: False)
+    ]
+    current_step = steps[st.session_state.market_step]
+    st.markdown(f"### {current_step[0]}")
+    st.write(f"👉 {current_step[1]}")
+    
+    portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
+    track_button = st.button("Track Portfolio & News")
+    
+    if st.session_state.market_step < len(steps) - 1:
+        if current_step[2](portfolio_input) and st.button("Next", key=f"market_next_{st.session_state.market_step}"):
+            if st.session_state.market_step == 0 and not api_key:
+                st.error("No key detected! Add it in the sidebar first.")
+            else:
                 st.session_state.tutorial_progress["market"]["points"] += 10
-                st.success("Good job! +10 WP - You’re tracking a stock!")
-
-            st.markdown("### Step 3: Track the Market")
-            st.write("Click 'Track Portfolio & News' to see live data.")
-            if st.button("I tracked the market!", key="market_step3"):
-                if api_key:
-                    st.session_state.tutorial_progress["market"]["points"] += 30
-                    st.success("Masterful! +30 WP - You’re now a market oracle!")
-                    st.session_state.tutorial_progress["market"]["completed"] = True
-                    st.write("🏅 **Badge Earned: Market Oracle**")
-                else:
-                    st.error("Add your API key first!")
+                st.session_state.market_step += 1
+                st.success(f"Step completed! +10 WP")
+                st.rerun()
+    elif st.session_state.market_step == len(steps) - 1 and track_button and api_key:
+        st.session_state.tutorial_progress["market"]["points"] += 30
+        st.session_state.tutorial_progress["market"]["completed"] = True
+        st.success("Quest completed! +30 WP")
+        st.write("🏅 **Badge Earned: Market Oracle**")
+        st.rerun()
+    elif track_button and not api_key:
+        st.error("Add your API key first!")
 
         with st.expander("How to Use This?"):
             st.write("""
