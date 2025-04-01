@@ -363,27 +363,6 @@ def main():
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-        
-        with st.expander("Quick Quiz: What’s This Tab About?"):
-            st.write("Test your understanding of the Stock Investments tab!")
-            
-            q1 = st.radio(
-                "What can you do with this tab?",
-                ["Track live stock prices", "Plan your retirement", "Analyze stock trends and get recommendations", "Check market news"],
-                key="q1_stock_intro"
-            )
-            q2 = st.radio(
-                "What does 'Risk Appetite' influence?",
-                ["The amount you invest", "The types of investments recommended", "Your retirement age", "Your monthly expenses"],
-                key="q2_stock_intro"
-            )
-            
-            if st.button("Check Answers", key="stock_intro_submit"):
-                if q1 == "Analyze stock trends and get recommendations" and q2 == "The types of investments recommended":
-                    st.success("Great job! This tab helps you analyze stock trends and suggests investments based on your risk and goals.")
-                else:
-                    st.warning("Not quite! This tab is for analyzing stock trends (like NIFTY CONSUMPTION) and getting investment ideas based on your risk appetite and goals.")
-        
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -453,27 +432,6 @@ def main():
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
-        
-        with st.expander("Quick Quiz: What’s This Tab About?"):
-            st.write("Test your understanding of the Personalized Investment tab!")
-            
-            q1 = st.radio(
-                "What does this tab help you create?",
-                ["A stock portfolio", "A personalized investment plan", "A retirement forecast", "A live market dashboard"],
-                key="q1_invest_intro"
-            )
-            q2 = st.radio(
-                "What factors does it consider?",
-                ["Your age and retirement goals", "Live stock prices", "Income, expenses, risk, and goals", "Market news sentiment"],
-                key="q2_invest_intro"
-            )
-            
-            if st.button("Check Answers", key="invest_intro_submit"):
-                if q1 == "A personalized investment plan" and q2 == "Income, expenses, risk, and goals":
-                    st.success("Nice work! This tab builds a custom investment plan using your financial details, risk tolerance, and goals.")
-                else:
-                    st.warning("Not quite! This tab creates a personalized investment plan based on your income, expenses, risk tolerance, and goals.")
-        
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -595,27 +553,6 @@ def main():
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
-        
-        with st.expander("Quick Quiz: What’s This Tab About?"):
-            st.write("Test your understanding of the Retirement Planning tab!")
-            
-            q1 = st.radio(
-                "What’s the main goal of this tab?",
-                ["Track stock trends", "Plan your retirement savings", "Get live market updates", "Build a budget"],
-                key="q1_retire_intro"
-            )
-            q2 = st.radio(
-                "What can reduce your retirement savings need?",
-                ["Higher risk investments", "Lower stock prices", "Additional income sources", "More debt"],
-                key="q2_retire_intro"
-            )
-            
-            if st.button("Check Answers", key="retire_intro_submit"):
-                if q1 == "Plan your retirement savings" and q2 == "Additional income sources":
-                    st.success("Well done! This tab helps you plan retirement savings, and additional income (like pensions) can lower what you need to save.")
-                else:
-                    st.warning("Not quite! This tab forecasts your retirement savings needs, and additional income sources can reduce that amount.")
-        
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -720,21 +657,6 @@ def main():
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-        
-        with st.expander("Quick Quiz: What’s This Tab About?"):
-            st.write("Test your understanding of the Live Market Insights tab!")
-            
-            q1 = st.radio(
-                "What does this tab require to work?",
-                ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
-                key="q1_market_intro"
-            )
-            q2 = st.radio(
-                "What can you track here?",
-                ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
-                key="q2_market_intro"
-            )
-            
             if st.button("Check Answers", key="market_intro_submit"):
                 if q1 == "An API key" and q2 == "Stock prices and market news":
                     st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
