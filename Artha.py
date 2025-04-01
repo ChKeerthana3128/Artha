@@ -91,19 +91,18 @@ def load_financial_data(csv_path="financial_data.csv"):
         df = pd.read_csv(csv_path)
         df.columns = [col.strip().replace('"', '') for col in df.columns]
         col_map = {col.lower(): col for col in df.columns}
-        required_cols = ["income"]  # Relax requirement for 'projected_savings'
+        required_cols = ["income"]
         missing_cols = [col for col in required_cols if col not in col_map]
         if missing_cols:
             st.error(f"🚨 'financial_data.csv' is missing required columns: {', '.join(missing_cols)}")
             return None
         df = df.rename(columns={col_map["income"]: "income"})
-        # If 'projected_savings' is missing, calculate it as a placeholder
         if "projected_savings" not in col_map:
-            df["Projected_Savings"] = df["income"] * 0.2  # Assume 20% of income as savings
+            df["Projected_Savings"] = df["income"] * 0.2
             st.warning("⚠️ 'projected_savings' not found in CSV. Using 20% of income as a placeholder.")
         else:
             df = df.rename(columns={col_map["projected_savings"]: "Projected_Savings"})
-        expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
+        expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare",
                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
         available_expense_cols = [col for col in expense_cols if col in df.columns]
         if available_expense_cols:
@@ -190,7 +189,7 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     risk_map = {"Low": 0, "Medium": 1, "High": 2}
     goal_map = {"Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3}
     risk_encoded = risk_map[risk_tolerance]
-    goal_encoded_list = [goal_map[goal] for goal in goals]  # Convert selected goals to their encoded values
+    goal_encoded_list = [goal_map[goal] for goal in goals]
     
     input_data = investment_data[["Min_Invest", "Risk_Encoded", "Goal_Encoded", "Expected_Return", "Volatility"]].copy()
     input_data["Expected_Return"] = input_data["Expected_Return"] * (1 + horizon_years * 0.05)
@@ -199,7 +198,6 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     scores = model.predict(input_data)
     investment_data["Suitability_Score"] = scores
     
-    # Filter investments: match risk tolerance and ANY of the selected goals (or "No specific goal")
     filtered = investment_data[
         (investment_data["Min_Invest"] <= invest_amount) &
         (investment_data["Risk_Encoded"] <= risk_encoded) &
@@ -223,7 +221,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf = FPDF()
     pdf.add_page()
 
-    # Check and add the font
     font_path = "DejaVuSans.ttf"
     if os.path.exists(font_path):
         pdf.add_font('DejaVu', '', font_path, uni=True)
@@ -232,20 +229,16 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         print(f"Font file {font_path} not found. Defaulting to Arial.")
         pdf.set_font("Arial", "B", 16)
 
-    # Helper function to handle Unicode characters
     def clean_text(text):
         if isinstance(text, str):
             return text.encode('latin-1', 'replace').decode('latin-1')
         return str(text)
 
     pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
-
-    # Subtitle
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
 
-    # Financial Summary Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -256,7 +249,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
     pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
     pdf.ln(10)
 
-    # Investment Recommendations
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -267,7 +259,6 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
                 pdf.cell(0, 10, clean_text(f"  - {rec['Company']}: INR {rec['Amount']:,.2f}"), ln=True)
     pdf.ln(10)
 
-    # Budget Tips Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
@@ -275,20 +266,18 @@ def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_
         pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
     pdf.ln(10)
 
-    # Peer Comparison Section
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
 
-    # Use a temporary file to generate the PDF, then read it into a buffer
     buffer = io.BytesIO()
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        pdf.output(tmp_file.name)  # Write PDF to a temporary file
+        pdf.output(tmp_file.name)
         tmp_file.close()
         with open(tmp_file.name, 'rb') as f:
-            buffer.write(f.read())  # Read the file into the buffer
-        os.unlink(tmp_file.name)  # Delete the temporary file
+            buffer.write(f.read())
+        os.unlink(tmp_file.name)
     buffer.seek(0)
     return buffer
 
@@ -342,7 +331,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar with API Key Explanation
+    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -372,29 +361,29 @@ def main():
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
     with tab1:
-    st.header("📈 Stock Market Adventure")
-    st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-    
-    with st.expander("Quick Quiz: What’s This Tab About?"):
-        st.write("Test your understanding of the Stock Investments tab!")
+        st.header("📈 Stock Market Adventure")
+        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         
-        q1 = st.radio(
-            "What can you do with this tab?",
-            ["Track live stock prices", "Plan your retirement", "Analyze stock trends and get recommendations", "Check market news"],
-            key="q1_stock"
-        )
-        q2 = st.radio(
-            "What does 'Risk Appetite' influence?",
-            ["The amount you invest", "The types of investments recommended", "Your retirement age", "Your monthly expenses"],
-            key="q2_stock"
-        )
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Test your understanding of the Stock Investments tab!")
+            
+            q1 = st.radio(
+                "What can you do with this tab?",
+                ["Track live stock prices", "Plan your retirement", "Analyze stock trends and get recommendations", "Check market news"],
+                key="q1_stock"
+            )
+            q2 = st.radio(
+                "What does 'Risk Appetite' influence?",
+                ["The amount you invest", "The types of investments recommended", "Your retirement age", "Your monthly expenses"],
+                key="q2_stock"
+            )
+            
+            if st.button("Check Answers", key="stock_submit"):
+                if q1 == "Analyze stock trends and get recommendations" and q2 == "The types of investments recommended":
+                    st.success("Great job! This tab helps you analyze stock trends and suggests investments based on your risk and goals.")
+                else:
+                    st.warning("Not quite! This tab is for analyzing stock trends (like NIFTY CONSUMPTION) and getting investment ideas based on your risk appetite and goals.")
         
-        if st.button("Check Answers", key="stock_submit"):
-            if q1 == "Analyze stock trends and get recommendations" and q2 == "The types of investments recommended":
-                st.success("Great job! This tab helps you analyze stock trends and suggests investments based on your risk and goals.")
-            else:
-                st.warning("Not quite! This tab is for analyzing stock trends (like NIFTY CONSUMPTION) and getting investment ideas based on your risk appetite and goals.")
-        # Stock Market Form
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -443,28 +432,29 @@ def main():
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
 
     with tab2:
-    st.header("🎯 Your Investment Journey")
-    st.markdown("Craft a personalized plan for wealth growth! 🌈")
-    
-    with st.expander("Quick Quiz: What’s This Tab About?"):
-        st.write("Test your understanding of the Personalized Investment tab!")
+        st.header("🎯 Your Investment Journey")
+        st.markdown("Craft a personalized plan for wealth growth! 🌈")
         
-        q1 = st.radio(
-            "What does this tab help you create?",
-            ["A stock portfolio", "A personalized investment plan", "A retirement forecast", "A live market dashboard"],
-            key="q1_invest"
-        )
-        q2 = st.radio(
-            "What factors does it consider?",
-            ["Your age and retirement goals", "Live stock prices", "Income, expenses, risk, and goals", "Market news sentiment"],
-            key="q2_invest"
-        )
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Test your understanding of the Personalized Investment tab!")
+            
+            q1 = st.radio(
+                "What does this tab help you create?",
+                ["A stock portfolio", "A personalized investment plan", "A retirement forecast", "A live market dashboard"],
+                key="q1_invest"
+            )
+            q2 = st.radio(
+                "What factors does it consider?",
+                ["Your age and retirement goals", "Live stock prices", "Income, expenses, risk, and goals", "Market news sentiment"],
+                key="q2_invest"
+            )
+            
+            if st.button("Check Answers", key="invest_submit"):
+                if q1 == "A personalized investment plan" and q2 == "Income, expenses, risk, and goals":
+                    st.success("Nice work! This tab builds a custom investment plan using your financial details, risk tolerance, and goals.")
+                else:
+                    st.warning("Not quite! This tab creates a personalized investment plan based on your income, expenses, risk tolerance, and goals.")
         
-        if st.button("Check Answers", key="invest_submit"):
-            if q1 == "A personalized investment plan" and q2 == "Income, expenses, risk, and goals":
-                st.success("Nice work! This tab builds a custom investment plan using your financial details, risk tolerance, and goals.")
-            else:
-                st.warning("Not quite! This tab creates a personalized investment plan based on your income, expenses, risk tolerance, and goals.")
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -494,7 +484,6 @@ def main():
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
 
-            # Savings Breakdown Visualization
             st.subheader("💰 Your Monthly Breakdown")
             breakdown_data = {
                 "Essentials": essentials,
@@ -505,7 +494,6 @@ def main():
             fig = px.pie(values=list(breakdown_data.values()), names=list(breakdown_data.keys()), title="Spending vs. Savings")
             st.plotly_chart(fig, use_container_width=True)
 
-            # Investment Options
             st.subheader("💼 Your Investment Options")
             st.write(f"Goals Selected: {', '.join(goals)}")
             st.write(f"Amount to Invest: ₹{invest_amount:,.2f} ({invest_percent}% of ₹{predicted_savings:,.2f})")
@@ -516,7 +504,6 @@ def main():
                         for rec in recs:
                             st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
 
-            # Savings Progress and Peer Comparison
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("🎯 Savings Progress")
@@ -527,7 +514,6 @@ def main():
                 st.subheader("📊 Peer Benchmark")
                 st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
 
-            # Savings Goal Timeline
             st.subheader("⏰ Time to Goal")
             months_to_goal = goal_amount / predicted_savings if predicted_savings > 0 else float('inf')
             years_to_goal = months_to_goal / 12
@@ -540,7 +526,6 @@ def main():
             st.plotly_chart(fig, use_container_width=True)
             st.write(f"Estimated Time to Goal: {years_to_goal:.1f} years at current savings rate")
 
-            # Enhanced Budget Tips
             with st.expander("💡 Personalized Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
@@ -554,11 +539,10 @@ def main():
                 else:
                     tips.append("Great job! Your savings exceed your goal - consider increasing your investment percentage.")
                 if "Wealth growth" in goals and risk_tolerance == "Low":
-                    tips.append("For wealth growth, consider medium-risk options to boost returns over {horizon_years} years.")
+                    tips.append(f"For wealth growth, consider medium-risk options to boost returns over {horizon_years} years.")
                 for tip in tips:
                     st.write(f"- {tip}")
 
-            # Risk Tolerance Assessment
             st.subheader("🎲 Risk Tolerance Assessment")
             risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
             st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
@@ -567,34 +551,33 @@ def main():
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
 
-            # PDF Download (updated to handle multiple goals)
-            pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
+            pdf_buffer = generate_pdf(name, income, predicted_savings, ", HCCFjoin(goals)", risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
-   with tab3:
-    st.header("🏡 Retirement Planning")
-    st.markdown("Secure your golden years with smart savings! 🌞")
-    
-    with st.expander("Quick Quiz: What’s This Tab About?"):
-        st.write("Test your understanding of the Retirement Planning tab!")
+    with tab3:
+        st.header("🏡 Retirement Planning")
+        st.markdown("Secure your golden years with smart savings! 🌞")
         
-        q1 = st.radio(
-            "What’s the main goal of this tab?",
-            ["Track stock trends", "Plan your retirement savings", "Get live market updates", "Build a budget"],
-            key="q1_retire"
-        )
-        q2 = st.radio(
-            "What can reduce your retirement savings need?",
-            ["Higher risk investments", "Lower stock prices", "Additional income sources", "More debt"],
-            key="q2_retire"
-        )
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Test your understanding of the Retirement Planning tab!")
+            
+            q1 = st.radio(
+                "What’s the main goal of this tab?",
+                ["Track stock trends", "Plan your retirement savings", "Get live market updates", "Build a budget"],
+                key="q1_retire"
+            )
+            q2 = st.radio(
+                "What can reduce your retirement savings need?",
+                ["Higher risk investments", "Lower stock prices", "Additional income sources", "More debt"],
+                key="q2_retire"
+            )
+            
+            if st.button("Check Answers", key="retire_submit"):
+                if q1 == "Plan your retirement savings" and q2 == "Additional income sources":
+                    st.success("Well done! This tab helps you plan retirement savings, and additional income (like pensions) can lower what you need to save.")
+                else:
+                    st.warning("Not quite! This tab forecasts your retirement savings needs, and additional income sources can reduce that amount.")
         
-        if st.button("Check Answers", key="retire_submit"):
-            if q1 == "Plan your retirement savings" and q2 == "Additional income sources":
-                st.success("Well done! This tab helps you plan retirement savings, and additional income (like pensions) can lower what you need to save.")
-            else:
-                st.warning("Not quite! This tab forecasts your retirement savings needs, and additional income sources can reduce that amount.")
-        # Retirement Planning Form with New Features
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -602,11 +585,10 @@ def main():
                 income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
                 current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
             with col2:
-                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)  # Start at age + 1
+                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
                 inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0, help="Adjusts expenses for future value")
         
-            # Multiple Income Sources Input
             st.subheader("Additional Income Sources in Retirement")
             income_sources = st.multiselect(
                 "Select Sources", 
@@ -620,7 +602,6 @@ def main():
         
             submit = st.form_submit_button("🚀 Plan My Retirement")
     
-        # Process Submission
         if submit and financial_data is not None and retirement_model is not None:
             with st.spinner("Projecting your retirement..."):
                 years_to_retirement = retirement_age - age
@@ -628,20 +609,16 @@ def main():
                 if years_to_retirement <= 0:
                     st.error("🚨 Retirement age must be greater than current age!")
                 else:
-                    # Inflation-Adjusted Expenses with safeguard
                     future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement if monthly_expenses > 0 else 0
-                    retirement_goal = future_expenses * 12 * 20  # 20 years of retirement expenses
-                
-                    # Adjust for Additional Income Sources with safeguard
+                    retirement_goal = future_expenses * 12 * 20
+                    
                     annual_additional_income = additional_income * 12
                     retirement_goal -= annual_additional_income * 20
-                    retirement_goal = max(0, retirement_goal)  # Ensure non-negative goal
-                
-                    # Predict Savings and Forecast Wealth
+                    retirement_goal = max(0, retirement_goal)
+                    
                     predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
                     retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
         
-                    # Display Retirement Outlook
                     st.subheader("🌟 Retirement Outlook")
                     col1, col2 = st.columns(2)
                     col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
@@ -650,21 +627,17 @@ def main():
                         f"₹{retirement_goal:,.2f}",
                         f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}"
                     )
-                
-                    # Savings Trajectory with Inflation Adjustment
+                    
                     st.subheader("📈 Savings Trajectory")
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
-                
-                    # Debug output
+                    
                     st.write(f"Debug: years_to_retirement = {years_to_retirement}")
                     st.write(f"Debug: future_expenses = {future_expenses}, annual_additional_income = {annual_additional_income}")
                     st.write(f"Debug: adjusted_goals = {adjusted_goals}")
-                
-                    # Sanitize adjusted_goals to remove NaN or inf
+                    
                     adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
-                
-                    # Ensure lengths match
+                    
                     x_values = list(range(years_to_retirement + 1))
                     if len(x_values) != len(trajectory) or len(x_values) != len(adjusted_goals):
                         st.error("Data length mismatch detected. Unable to plot trajectory.")
@@ -677,8 +650,7 @@ def main():
                         )
                         fig.add_scatter(x=x_values, y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
                         st.plotly_chart(fig, use_container_width=True)
-                
-                    # Retirement Tips
+                    
                     st.subheader("💡 Retirement Tips")
                     if retirement_wealth < retirement_goal:
                         shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
@@ -689,50 +661,47 @@ def main():
                     st.write("- Consider adjusting investments for higher returns if needed.")
 
     with tab4:
-    st.header("🌐 Live Market Insights")
-    st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
-    
-    with st.expander("Quick Quiz: What’s This Tab About?"):
-        st.write("Test your understanding of the Live Market Insights tab!")
+        st.header("🌐 Live Market Insights")
+        st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
         
-        q1 = st.radio(
-            "What does this tab require to work?",
-            ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
-            key="q1_market"
-        )
-        q2 = st.radio(
-            "What can you track here?",
-            ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
-            key="q2_market"
-        )
-        
-        if st.button("Check Answers", key="market_submit"):
-            if q1 == "An API key" and q2 == "Stock prices and market news":
-                st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
-            else:
-                st.warning("Not quite! This tab needs an API key to track live stock prices and market news.")
-            st.write("""
-            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
-            2. **Pick Stocks**: Edit the list below or use these popular ones:
-               - AAPL (Apple)
-               - MSFT (Microsoft)
-               - GOOGL (Google)
-               - TSLA (Tesla)
-            3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
-            """)
-            st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Test your understanding of the Live Market Insights tab!")
+            
+            q1 = st.radio(
+                "What does this tab require to work?",
+                ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
+                key="q1_market"
+            )
+            q2 = st.radio(
+                "What can you track here?",
+                ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
+                key="q2_market"
+            )
+            
+            if st.button("Check Answers", key="market_submit"):
+                if q1 == "An API key" and q2 == "Stock prices and market news":
+                    st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
+                else:
+                    st.warning("Not quite! This tab needs an API key to track live stock prices and market news.")
+                st.write("""
+                1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar (see instructions there!).
+                2. **Pick Stocks**: Edit the list below or use these popular ones:
+                   - AAPL (Apple)
+                   - MSFT (Microsoft)
+                   - GOOGL (Google)
+                   - TSLA (Tesla)
+                3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
+                """)
+                st.info("No key yet? Follow the sidebar steps—it’s free and takes just a minute!")
 
         if not api_key:
             st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
         else:
-            # Live Portfolio Tracking with Working Tickers
             st.subheader("Live Portfolio Tracking")
             portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
             portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
             
-            # Combined Button for Portfolio and News
             if st.button("Track Portfolio & News"):
-                # Portfolio Tracking
                 total_value = 0
                 for symbol in portfolio:
                     with st.spinner(f"Fetching live data for {symbol}..."):
@@ -741,13 +710,11 @@ def main():
                             st.error(f"{symbol}: {error}")
                             continue
                         
-                        # Latest price and performance
                         latest_price = df["Close"].iloc[0]
                         previous_price = df["Close"].iloc[-1]
                         performance = ((latest_price - previous_price) / previous_price) * 100
-                        total_value += latest_price  # Assuming 1 share per stock
+                        total_value += latest_price
                         
-                        # Display current value and performance
                         col1, col2 = st.columns(2)
                         with col1:
                             st.metric(
@@ -768,15 +735,14 @@ def main():
                 
                 st.success(f"Total Portfolio Value: ${total_value:.2f}")
 
-                # Market News
                 st.subheader("Latest Market News")
-                ticker_for_news = portfolio[0] if portfolio else "AAPL"  # Default to first portfolio symbol or AAPL
+                ticker_for_news = portfolio[0] if portfolio else "AAPL"
                 with st.spinner(f"Fetching news for {ticker_for_news}..."):
                     news_feed, error = get_market_news(api_key, ticker_for_news)
                     if error or news_feed is None:
                         st.warning(error)
                     else:
-                        for article in news_feed[:5]:  # Show top 5 articles
+                        for article in news_feed[:5]:
                             st.write(f"**{article['title']}**")
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
