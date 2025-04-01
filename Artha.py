@@ -409,24 +409,6 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
-        
-        with st.expander("Quick Recap Quiz: Stock Investments"):
-            st.write("Let’s see how well you understood this tab!")
-            q1_end = st.radio(
-                "What does this tab predict?",
-                ["Your retirement savings", "Stock price trends", "Your monthly expenses", "Live stock prices"],
-                key="q1_stock_end"
-            )
-            q2_end = st.radio(
-                "What happens if no investments match your criteria?",
-                ["You get an error", "It suggests increasing investment amount or adjusting preferences", "It shows random options", "It skips to the next tab"],
-                key="q2_stock_end"
-            )
-            if st.button("Check Recap Answers", key="stock_end_submit"):
-                if q1_end == "Stock price trends" and q2_end == "It suggests increasing investment amount or adjusting preferences":
-                    st.success("Well done! You’ve got the hang of this tab—it predicts stock trends and guides you if no options fit.")
-                else:
-                    st.warning("Not quite! This tab predicts stock price trends and suggests tweaking your input if no investments match.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -529,25 +511,6 @@ def main():
 
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
-        
-        with st.expander("Quick Recap Quiz: Personalized Investment"):
-            st.write("Let’s recap what you learned from this tab!")
-            q1_end = st.radio(
-                "What does this tab generate?",
-                ["A stock chart", "A personalized investment plan with a PDF", "A retirement timeline", "Live market news"],
-                key="q1_invest_end"
-            )
-            q2_end = st.radio(
-                "What does the 'Time to Goal' chart show?",
-                ["Your stock growth", "How long to reach your savings goal", "Your retirement age", "Peer savings comparison"],
-                key="q2_invest_end"
-            )
-            if st.button("Check Recap Answers", key="invest_end_submit"):
-                if q1_end == "A personalized investment plan with a PDF" and q2_end == "How long to reach your savings goal":
-                    st.success("Great job! This tab creates a custom plan with a downloadable PDF and shows how long it’ll take to hit your savings goal.")
-                else:
-                    st.warning("Not quite! This tab gives you a personalized investment plan (with a PDF) and a timeline to your savings goal.")
-
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
@@ -628,25 +591,6 @@ def main():
                         st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
                     st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
                     st.write("- Consider adjusting investments for higher returns if needed.")
-        
-        with st.expander("Quick Recap Quiz: Retirement Planning"):
-            st.write("Let’s review what you’ve learned here!")
-            q1_end = st.radio(
-                "What does this tab forecast?",
-                ["Stock market trends", "Your retirement wealth and needs", "Your monthly budget", "Live stock prices"],
-                key="q1_retire_end"
-            )
-            q2_end = st.radio(
-                "How does additional income affect your retirement goal?",
-                ["Increases it", "Reduces the savings you need", "Doesn’t affect it", "Only affects expenses"],
-                key="q2_retire_end"
-            )
-            if st.button("Check Recap Answers", key="retire_end_submit"):
-                if q1_end == "Your retirement wealth and needs" and q2_end == "Reduces the savings you need":
-                    st.success("Nice one! This tab forecasts your retirement wealth and needs, and additional income lowers the savings required.")
-                else:
-                    st.warning("Not quite! This tab predicts your retirement wealth and needs, with additional income reducing your savings target.")
-
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
