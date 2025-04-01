@@ -35,6 +35,15 @@ investment_data["Goal_Encoded"] = investment_data["Goal"].map({
     "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
 })
 
+# Initialize Session State for Tutorial Progress
+if 'tutorial_progress' not in st.session_state:
+    st.session_state.tutorial_progress = {
+        "stock": {"points": 0, "completed": False},
+        "personalized": {"points": 0, "completed": False},
+        "retirement": {"points": 0, "completed": False},
+        "market": {"points": 0, "completed": False}
+    }
+
 # Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
@@ -99,7 +108,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         df = df.rename(columns={col_map["income"]: "income"})
         if "projected_savings" not in col_map:
             df["Projected_Savings"] = df["income"] * 0.2
-            st.warning("⚠️ 'projected_savings' not found. Using 20% of income.")
+            st.warning("⚠️ 'projected_savings' not found in CSV. Using 20% of income as a placeholder.")
         else:
             df = df.rename(columns={col_map["projected_savings"]: "Projected_Savings"})
         expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
@@ -201,8 +210,10 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
     filtered = investment_data[
         (investment_data["Min_Invest"] <= invest_amount) &
         (investment_data["Risk_Encoded"] <= risk_encoded) &
-        (investment_data["Goal_Encoded"].isin(goal_encoded_list) | 
-         (investment_data["Goal_Encoded"] == goal_map["No specific goal"]))
+        (
+            investment_data["Goal_Encoded"].isin(goal_encoded_list) | 
+            (investment_data["Goal_Encoded"] == goal_map["No specific goal"])
+        )
     ]
     
     recommendations = {}
@@ -214,50 +225,63 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
         ]
     return recommendations
 
-# PDF Generation
+# PDF Generation with FPDF
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"WealthWise Plan for {name}", ln=True, align="C")
+    font_path = "DejaVuSans.ttf"
+    if os.path.exists(font_path):
+        pdf.add_font('DejaVu', '', font_path, uni=True)
+        pdf.set_font('DejaVu', '', 16)
+    else:
+        print(f"Font file {font_path} not found. Defaulting to Arial.")
+        pdf.set_font("Arial", "B", 16)
+
+    def clean_text(text):
+        if isinstance(text, str):
+            return text.encode('latin-1', 'replace').decode('latin-1')
+        return str(text)
+
+    pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, "Powered by WealthWise | Built by xAI", ln=True, align="C")
+    pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
-    
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, f"Income: INR {income:,.2f}", ln=True)
-    pdf.cell(0, 10, f"Predicted Savings: INR {predicted_savings:,.2f}", ln=True)
-    pdf.cell(0, 10, f"Goal: {goal}", ln=True)
-    pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
-    pdf.cell(0, 10, f"Horizon: {horizon_years} years", ln=True)
+    pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
+    pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
+    pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
+    pdf.cell(0, 10, clean_text(f"Risk Tolerance: {risk_tolerance}"), ln=True)
+    pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
     pdf.ln(10)
-    
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
     for category, recs in recommendations.items():
         if recs:
-            pdf.cell(0, 10, f"{category}:", ln=True)
+            pdf.cell(0, 10, clean_text(f"{category}:"), ln=True)
             for rec in recs:
-                pdf.cell(0, 10, f"  - {rec['Company']}: INR {rec['Amount']:,.2f}", ln=True)
+                pdf.cell(0, 10, clean_text(f"  - {rec['Company']}: INR {rec['Amount']:,.2f}"), ln=True)
     pdf.ln(10)
-    
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, f"- {tip}", ln=True)
+        pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
     pdf.ln(10)
-    
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, f"Your Savings: INR {predicted_savings:,.2f} | Peer Avg: INR {peer_savings:,.2f}", ln=True)
-    
+    pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
+
     buffer = io.BytesIO()
-    pdf.output(buffer)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        pdf.output(tmp_file.name)
+        tmp_file.close()
+        with open(tmp_file.name, 'rb') as f:
+            buffer.write(f.read())
+        os.unlink(tmp_file.name)
     buffer.seek(0)
     return buffer
 
@@ -293,15 +317,7 @@ def get_market_news(api_key, tickers="AAPL"):
 def main():
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
-
-    # Initialize session state for tutorials
-    if 'tutorial_steps' not in st.session_state:
-        st.session_state.tutorial_steps = {
-            "stock": [False] * 5,
-            "investment": [False] * 5,
-            "retirement": [False] * 5,
-            "market": [False] * 5
-        }
+    st.write("Welcome, Artha Adventurer! Embark on quests to master your wealth. Earn Wealth Points (WP) and badges along the way!")
 
     # Load data
     stock_data = load_stock_data()
@@ -323,100 +339,80 @@ def main():
     # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
-        st.info("Explore your financial future!")
+        st.info("Explore your financial future with these tools!")
         if stock_data is not None:
             st.metric("Stock Model Accuracy (R²)", f"{stock_r2:.2f}")
         if survey_data is not None:
             st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
         if financial_data is not None:
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
-        
         st.markdown("### 🔑 Your Market Data Pass")
-        st.write("Paste your Alpha Vantage key for live data!")
-        api_key = st.text_input("Paste Your Key Here", value="", type="password")
-        st.markdown("[Get Free Key](https://www.alphavantage.co/)")
+        st.write("To see live stock prices and news, we need a 'key'—think of it like a ticket to unlock real-time market updates!")
+        api_key = st.text_input("Paste Your Key Here", value="", type="password", 
+                               help="This is a special code from Alpha Vantage that lets us fetch live stock data just for you!")
+        st.markdown("""
+        **Why do I need this?**  
+        It’s your VIP pass to see what’s happening in the stock market right now—like checking the latest price of Apple or Tesla!
+        
+        **How to Get It:**  
+        1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
+        2. Click 'Get Free API Key' and sign up with your email.  
+        3. Copy the code they give you (e.g., 'X7K9P2M4Q1').  
+        4. Paste it here and start tracking!
+        """)
 
     # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
+    # Tab 1: Stock Investments
     with tab1:
-        with st.expander("📚 Tutorial: Ride the Stock Market Wave!"):
-            slide = st.slider("Move through the tutorial", 1, 6, 1, label_visibility="hidden")
-            progress = st.progress(slide / 6)
-            if slide == 1:
-                st.image("https://via.placeholder.com/150", caption="Ready to ride the stock market wave? Let’s set you up!")
-            elif slide == 2:
-                st.slider("Horizon (Months)", 1, 60, 12, disabled=True)
-                st.write("Pick how long you’ll invest—longer horizons can mean bigger waves!")
-            elif slide == 3:
-                st.number_input("Amount (₹)", 1000.0, 10000.0, 6000.0, disabled=True)
-                st.write("How much to invest? Start small or go big!")
-            elif slide == 4:
-                col1, col2, col3 = st.columns(3)
-                col1.button("Low", disabled=True, help="Safe")
-                col2.button("Medium", disabled=True, help="Balanced")
-                col3.button("High", disabled=True, help="Bold")
-                st.write("Choose your vibe: Safe, Balanced, or Bold!")
-            elif slide == 5:
-                st.checkbox("Wealth growth", value=True, disabled=True)
-                st.checkbox("Emergency fund", disabled=True)
-                st.write("What’s your dream? Check one or more!")
-            elif slide == 6:
-                if st.button("Try It!"):
-                    st.write("Filling form with sample data...")
-                st.write("Hit 'Explore Market' to see your future!")
         st.header("📈 Stock Market Adventure")
-        st.markdown("Navigate NIFTY CONSUMPTION with precision! 🌟")
+        st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
+        
+        with st.expander("🎮 Start Your Stock Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["stock"]["completed"]):
+            st.write("**Quest: Become a Stock Sage!**")
+            st.write(f"Wealth Points: {st.session_state.tutorial_progress['stock']['points']}/50")
+            progress = st.session_state.tutorial_progress["stock"]["points"] / 50
+            st.progress(progress)
+            
+            st.markdown("### Step 1: Set Your Horizon")
+            st.write("Adjust the 'Investment Horizon' slider to 24 months.")
+            if st.button("I set it to 24 months!", key="stock_step1"):
+                st.session_state.tutorial_progress["stock"]["points"] += 10
+                st.success("Great! +10 WP - You’ve set your adventure timeline!")
 
-        # Interactive Tutorial
-        if not all(st.session_state.tutorial_steps["stock"]):
-            with st.expander("🎓 Learn How to Invest", expanded=True):
-                st.markdown("Click each step!")
-                col1, col2, col3, col4, col5 = st.columns(5)
-                with col1:
-                    if st.button("📊 What’s NIFTY?", key="stock_step1"):
-                        st.session_state.tutorial_steps["stock"][0] = True
-                        st.write("Consumer companies index!")
-                        st.audio("https://example.com/audio/nifty.mp3", format="audio/mp3")
-                        st.balloons()
-                with col2:
-                    if st.button("⚙️ Set Inputs", key="stock_step2"):
-                        st.session_state.tutorial_steps["stock"][1] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/stock_form.png", caption="Form")
-                        st.audio("https://example.com/audio/inputs.mp3", format="audio/mp3")
-                        st.balloons()
-                with col3:
-                    if st.button("🔮 Forecast", key="stock_step3"):
-                        st.session_state.tutorial_steps["stock"][2] = True
-                        st.metric("Sample", "₹5000", "₹200")
-                        st.audio("https://example.com/audio/forecast.mp3", format="audio/mp3")
-                        st.balloons()
-                with col4:
-                    if st.button("💡 Recommendations", key="stock_step4"):
-                        st.session_state.tutorial_steps["stock"][3] = True
-                        with st.expander("Sample"):
-                            st.write("- Reliance: ₹2000")
-                        st.audio("https://example.com/audio/recommendations.mp3", format="audio/mp3")
-                        st.balloons()
-                with col5:
-                    if st.button("🔍 Chart", key="stock_step5"):
-                        st.session_state.tutorial_steps["stock"][4] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/stock_chart.png", caption="Chart")
-                        st.audio("https://example.com/audio/chart.mp3", format="audio/mp3")
-                        st.balloons()
+            st.markdown("### Step 2: Pick Your Risk")
+            st.write("Choose 'Medium' risk tolerance from the dropdown.")
+            if st.button("I chose Medium risk!", key="stock_step2"):
+                st.session_state.tutorial_progress["stock"]["points"] += 10
+                st.success("Nice! +10 WP - You’re balancing risk and reward!")
+
+            st.markdown("### Step 3: Select a Goal")
+            st.write("Pick 'Wealth growth' as your goal.")
+            if st.button("I picked Wealth growth!", key="stock_step3"):
+                st.session_state.tutorial_progress["stock"]["points"] += 10
+                st.success("Awesome! +10 WP - Your goal is set!")
+
+            st.markdown("### Step 4: Explore the Market")
+            st.write("Click 'Explore Market' to see your strategy.")
+            if st.button("I explored the market!", key="stock_step4"):
+                st.session_state.tutorial_progress["stock"]["points"] += 20
+                st.success("Victory! +20 WP - You’ve unlocked your stock strategy!")
+                st.session_state.tutorial_progress["stock"]["completed"] = True
+                st.write("🏅 **Badge Earned: Stock Sage**")
 
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
             with col1:
-                horizon = st.slider("⏳ Horizon (Months)", 1, 60, 12)
-                invest_amount = st.number_input("💰 Amount (₹)", min_value=1000.0, value=6000.0, step=500.0)
+                horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
+                invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
             with col2:
-                risk_tolerance = st.selectbox("🎲 Risk", ["Low", "Medium", "High"])
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
             submit = st.form_submit_button("🚀 Explore Market")
         
         if submit and stock_data is not None and stock_model is not None:
-            with st.spinner("Analyzing..."):
+            with st.spinner("Analyzing your investment strategy..."):
                 future = pd.DataFrame({"Day": [1], "Month": [horizon % 12 or 12], "Year": [2025 + horizon // 12]})
                 predicted_price = stock_model.predict(future)[0]
                 current_price = stock_data['close'].iloc[-1]
@@ -428,11 +424,11 @@ def main():
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
             col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
             with st.expander("📊 Price Trend", expanded=True):
-                fig = px.line(stock_data, x='Date', y='close', title="NIFTY Trend", hover_data=['open', 'high', 'low', 'volume'])
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", hover_data=['open', 'high', 'low', 'volume'])
                 fig.update_traces(line_color='#00ff00')
                 st.plotly_chart(fig, use_container_width=True)
-            st.subheader("💡 Your Strategy")
-            st.write(f"Goals: {', '.join(goals)}")
+            st.subheader("💡 Your Investment Strategy")
+            st.write(f"Goals Selected: {', '.join(goals)}")
             progress = min(1.0, invest_amount / 100000)
             st.progress(progress)
             any_recommendations = False
@@ -442,111 +438,79 @@ def main():
                     any_recommendations = True
                     with st.expander(f"{category} Options"):
                         for rec in recs:
-                            st.write(f"- **{rec['Company']}**: ₹{rec['Amount']:,.2f}")
+                            st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
-                st.info("No matches. Adjust inputs!")
+                st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
 
+    # Tab 2: Personalized Investment
     with tab2:
-        with st.expander("📚 Tutorial: Chat with WealthWise Bot!"):
-            chat_step = st.selectbox("Chat with me!", [1, 2, 3, 4, 5, 6, 7], format_func=lambda x: f"Message {x}")
-            if chat_step == 1:
-                st.write("🤖 Hi there! I’m WealthWise Bot. What’s your name?")
-                st.text_input("Name", "Aarav", disabled=True)
-            elif chat_step == 2:
-                st.write("🤖 Great, Aarav! How much do you earn monthly?")
-                st.number_input("Income (₹)", value=50000.0, disabled=True)
-            elif chat_step == 3:
-                st.write("🤖 Cool! What do you spend on essentials like food?")
-                st.number_input("Essentials (₹)", value=20000.0, disabled=True)
-                fig = px.pie(names=["Essentials", "Rest"], values=[20000, 30000])
-                st.plotly_chart(fig, use_container_width=True)
-            elif chat_step == 4:
-                st.write("🤖 Any fun spending—like movies or coffee?")
-                st.number_input("Non-Essentials (₹)", value=5000.0, disabled=True)
-            elif chat_step == 5:
-                st.write("🤖 Got goals? Pick one or more!")
-                st.multiselect("Goals", ["Wealth growth", "Emergency fund"], ["Wealth growth"], disabled=True)
-            elif chat_step == 6:
-                st.write("🤖 Last step—risk level and years?")
-                st.selectbox("Risk", ["Low", "Medium", "High"], index=1, disabled=True)
-                st.slider("Years", 1, 10, 3, disabled=True)
-            elif chat_step == 7:
-                st.write("🤖 Awesome! Click 'Get Your Plan' to see my magic!")
-                if st.button("Test the Bot"):
-                    st.write("Generating a sample plan...")
-
         st.header("🎯 Your Investment Journey")
-        st.markdown("Craft a personalized plan! 🌈")
+        st.markdown("Craft a personalized plan for wealth growth! 🌈")
+        
+        with st.expander("🎮 Start Your Investment Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["personalized"]["completed"]):
+            st.write("**Quest: Forge Your Wealth Path!**")
+            st.write(f"Wealth Points: {st.session_state.tutorial_progress['personalized']['points']}/60")
+            progress = st.session_state.tutorial_progress["personalized"]["points"] / 60
+            st.progress(progress)
+            
+            st.markdown("### Step 1: Enter Your Name")
+            st.write("Type your name (e.g., 'Adventurer') in the text box.")
+            if st.button("I entered my name!", key="personalized_step1"):
+                st.session_state.tutorial_progress["personalized"]["points"] += 10
+                st.success("Well done! +10 WP - You’ve claimed your identity!")
 
-        # Interactive Tutorial
-        if not all(st.session_state.tutorial_steps["investment"]):
-            with st.expander("🎓 Learn How to Plan", expanded=True):
-                st.markdown("Click each step!")
-                progress = sum(st.session_state.tutorial_steps["investment"]) / 5
-                col1, col2, col3, col4, col5 = st.columns(5)
-                with col1:
-                    if st.button("🏆 Why Plan?", key="invest_step1"):
-                        st.session_state.tutorial_steps["investment"][0] = True
-                        st.write("Tailored for YOU!")
-                        st.audio("https://example.com/audio/why_plan.mp3", format="audio/mp3")
-                        st.balloons()
-                with col2:
-                    if st.button("✏️ Add Details", key="invest_step2"):
-                        st.session_state.tutorial_steps["investment"][1] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/invest_form.png", caption="Form")
-                        st.audio("https://example.com/audio/details.mp3", format="audio/mp3")
-                        st.balloons()
-                with col3:
-                    if st.button("🥧 Savings", key="invest_step3"):
-                        st.session_state.tutorial_steps["investment"][2] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/pie_chart.png", caption="Pie")
-                        st.audio("https://example.com/audio/savings.mp3", format="audio/mp3")
-                        st.balloons()
-                with col4:
-                    if st.button("💰 Invest", key="invest_step4"):
-                        st.session_state.tutorial_steps["investment"][3] = True
-                        st.write("Sample: HDFC - ₹1000")
-                        st.audio("https://example.com/audio/invest.mp3", format="audio/mp3")
-                        st.balloons()
-                with col5:
-                    if st.button("📥 Download", key="invest_step5"):
-                        st.session_state.tutorial_steps["investment"][4] = True
-                        st.write("Get your PDF!")
-                        st.audio("https://example.com/audio/download.mp3", format="audio/mp3")
-                        st.balloons()
-                st.progress(progress)
+            st.markdown("### Step 2: Set Your Income")
+            st.write("Input ₹50,000 as your monthly income.")
+            if st.button("I set my income!", key="personalized_step2"):
+                st.session_state.tutorial_progress["personalized"]["points"] += 10
+                st.success("Great! +10 WP - Your treasure chest is growing!")
+
+            st.markdown("### Step 3: Add Expenses")
+            st.write("Set Essentials to ₹20,000 and Non-Essentials to ₹10,000.")
+            if st.button("I added expenses!", key="personalized_step3"):
+                st.session_state.tutorial_progress["personalized"]["points"] += 20
+                st.success("Nice! +20 WP - You’ve mapped your spending!")
+
+            st.markdown("### Step 4: Get Your Plan")
+            st.write("Click 'Get Your Plan' to see your strategy.")
+            if st.button("I got my plan!", key="personalized_step4"):
+                st.session_state.tutorial_progress["personalized"]["points"] += 20
+                st.success("Epic! +20 WP - You’ve forged your wealth path!")
+                st.session_state.tutorial_progress["personalized"]["completed"] = True
+                st.write("🏅 **Badge Earned: Wealth Forger**")
 
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
             with col1:
-                name = st.text_input("👤 Name")
-                income = st.number_input("💰 Income (₹)", min_value=0.0, step=1000.0)
-                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0)
-                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
-                debt_payment = st.number_input("💳 Debt (₹)", min_value=0.0, step=100.0)
+                name = st.text_input("👤 Your Name", help="Who’s planning their wealth?")
+                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+                essentials = st.number_input("🍲 Essentials (₹)", min_value=0.0, step=100.0, help="Food, transport, etc.")
+                non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0, help="Fun stuff!")
+                debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
             with col2:
                 goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
-                goal_amount = st.number_input("💎 Goal (₹)", min_value=0.0, step=1000.0, value=50000.0)
-                risk_tolerance = st.selectbox("🎲 Risk", ["Low", "Medium", "High"])
+                goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
+                risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
-                invest_percent = st.slider("💸 % to Invest", 0, 100, 50)
-            submit = st.form_submit_button("🚀 Get Plan")
+                invest_percent = st.slider("💸 % of Savings to Invest", 0, 100, 50)
+            submit = st.form_submit_button("🚀 Get Your Plan")
         
         if submit and survey_data is not None and survey_model is not None:
-            with st.spinner("Crafting plan..."):
+            with st.spinner("Crafting your personalized plan..."):
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
                 invest_amount = predicted_savings * (invest_percent / 100)
                 recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
                 monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
 
-            st.subheader("💰 Monthly Breakdown")
-            breakdown_data = {"Essentials": essentials, "Non-Essentials": non_essentials, "Debt": debt_payment, "Savings": predicted_savings}
+            st.subheader("💰 Your Monthly Breakdown")
+            breakdown_data = {"Essentials": essentials, "Non-Essentials": non_essentials, "Debt Payment": debt_payment, "Savings": predicted_savings}
             fig = px.pie(values=list(breakdown_data.values()), names=list(breakdown_data.keys()), title="Spending vs. Savings")
             st.plotly_chart(fig, use_container_width=True)
 
-            st.subheader("💼 Investment Options")
-            st.write(f"Goals: {', '.join(goals)} | Invest: ₹{invest_amount:,.2f}")
+            st.subheader("💼 Your Investment Options")
+            st.write(f"Goals Selected: {', '.join(goals)}")
+            st.write(f"Amount to Invest: ₹{invest_amount:,.2f} ({invest_percent}% of ₹{predicted_savings:,.2f})")
             for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
                 recs = recommendations.get(category, [])
                 if recs:
@@ -565,210 +529,190 @@ def main():
                 st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
 
             st.subheader("⏰ Time to Goal")
-            years_to_goal = (goal_amount / predicted_savings / 12) if predicted_savings > 0 else float('inf')
+            months_to_goal = goal_amount / predicted_savings if predicted_savings > 0 else float('inf')
+            years_to_goal = months_to_goal / 12
             timeline_data = pd.DataFrame({"Years": range(horizon_years + 1), "Savings": [predicted_savings * 12 * y for y in range(horizon_years + 1)]})
-            fig = px.line(timeline_data, x="Years", y="Savings", title=f"Projected to ₹{goal_amount:,.2f}")
-            fig.add_hline(y=goal_amount, line_dash="dash", line_color="red")
+            fig = px.line(timeline_data, x="Years", y="Savings", title=f"Projected Savings to Reach ₹{goal_amount:,.2f}")
+            fig.add_hline(y=goal_amount, line_dash="dash", line_color="red", annotation_text="Goal")
             st.plotly_chart(fig, use_container_width=True)
-            st.write(f"Time: {years_to_goal:.1f} years")
+            st.write(f"Estimated Time to Goal: {years_to_goal:.1f} years at current savings rate")
 
-            with st.expander("💡 Budget Tips", expanded=True):
+            with st.expander("💡 Personalized Budget Tips", expanded=True):
                 tips = []
                 median_non_essentials = survey_data["Non_Essentials"].median()
                 if non_essentials > median_non_essentials:
-                    tips.append(f"Cut non-essentials by ₹{non_essentials - median_non_essentials:,.2f}")
+                    tips.append(f"Reduce non-essentials by ₹{non_essentials - median_non_essentials:,.2f} (peer median: ₹{median_non_essentials:,.2f}).")
                 if debt_payment > income * 0.3:
-                    tips.append("Debt > 30% - refinance?")
+                    tips.append("Debt payment exceeds 30% of income - consider refinancing or cutting expenses.")
                 if predicted_savings < monthly_savings_needed:
-                    tips.append(f"Save ₹{monthly_savings_needed - predicted_savings:,.2f} more/month")
+                    shortfall = monthly_savings_needed - predicted_savings
+                    tips.append(f"Boost savings by ₹{shortfall:,.2f}/month to meet your goal in {horizon_years} years.")
                 else:
-                    tips.append("Great savings! Invest more?")
+                    tips.append("Great job! Your savings exceed your goal - consider increasing your investment percentage.")
+                if "Wealth growth" in goals and risk_tolerance == "Low":
+                    tips.append(f"For wealth growth, consider medium-risk options to boost returns over {horizon_years} years.")
                 for tip in tips:
                     st.write(f"- {tip}")
 
+            st.subheader("🎲 Risk Tolerance Assessment")
+            risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
+            st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
+            if risk_tolerance == "Low" and horizon_years > 5:
+                st.info("Long horizon with low risk? You could explore medium-risk options for better returns.")
+            elif risk_tolerance == "High" and horizon_years < 3:
+                st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
+
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
-            st.download_button("📥 Download Plan", pdf_buffer, f"{name}_plan.pdf", "application/pdf")
+            st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
+    # Tab 3: Retirement Planning
     with tab3:
-        with st.expander("📚 Tutorial: Your Retirement Timeline"):
-            st.write("Click or hover on each milestone!")
-            timeline = st.slider("Explore the Timeline", 1, 7, 1, label_visibility="hidden")
-            if timeline == 1:
-                st.write("🎂 **Current Age**: Enter your age (e.g., 30)—where you are now!")
-            elif timeline == 2:
-                st.write("💰 **Income & Savings**: Add your monthly income (₹40,000) and savings (₹50,000).")
-            elif timeline == 3:
-                st.write("👴 **Retirement Age**: Pick when you’ll retire (e.g., 65)—your finish line!")
-            elif timeline == 4:
-                st.write("💸 **Expenses**: Estimate monthly costs in retirement (₹25,000).")
-            elif timeline == 5:
-                st.write("📈 **Inflation**: Set inflation (e.g., 3%)—prices rise over time!")
-                fig = px.line(x=[0, 35], y=[25000, 25000 * (1.03**35)], title="Expenses with 3% Inflation")
-                st.plotly_chart(fig)
-            elif timeline == 6:
-                st.write("🏠 **Extra Income**: Add pensions or rent (e.g., ₹10,000) to ease the load.")
-            elif timeline == 7:
-                st.write("🚀 **Plan**: Hit 'Plan My Retirement' to see your future!")
-                if st.button("See a Sample Timeline"):
-                    st.write("Sample: Age 30 to 65, Income ₹40,000, Expenses ₹25,000...")
         st.header("🏡 Retirement Planning")
-        st.markdown("Secure your golden years! 🌞")
+        st.markdown("Secure your golden years with smart savings! 🌞")
+        
+        with st.expander("🎮 Start Your Retirement Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["retirement"]["completed"]):
+            st.write("**Quest: Secure Your Golden Vault!**")
+            st.write(f"Wealth Points: {st.session_state.tutorial_progress['retirement']['points']}/50")
+            progress = st.session_state.tutorial_progress["retirement"]["points"] / 50
+            st.progress(progress)
+            
+            st.markdown("### Step 1: Set Your Age")
+            st.write("Enter your current age as 30.")
+            if st.button("I set my age!", key="retirement_step1"):
+                st.session_state.tutorial_progress["retirement"]["points"] += 10
+                st.success("Good start! +10 WP - Your journey begins!")
 
-        # Interactive Tutorial
-        if not all(st.session_state.tutorial_steps["retirement"]):
-            with st.expander("🎓 Learn How to Retire", expanded=True):
-                st.markdown("Click through!")
-                col1, col2, col3, col4, col5 = st.columns(5)
-                with col1:
-                    if st.button("🌅 Why Now?", key="retire_step1"):
-                        st.session_state.tutorial_steps["retirement"][0] = True
-                        st.write("Plan early!")
-                        st.audio("https://example.com/audio/why_retire.mp3", format="audio/mp3")
-                        st.balloons()
-                with col2:
-                    if st.button("⏰ Age", key="retire_step2"):
-                        st.session_state.tutorial_steps["retirement"][1] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/retire_form.png", caption="Form")
-                        st.audio("https://example.com/audio/age.mp3", format="audio/mp3")
-                        st.balloons()
-                with col3:
-                    if st.button("🎈 Inflation", key="retire_step3"):
-                        st.session_state.tutorial_steps["retirement"][2] = True
-                        st.write("₹1000 → ₹1300 in 10 yrs!")
-                        st.audio("https://example.com/audio/inflation.mp3", format="audio/mp3")
-                        st.balloons()
-                with col4:
-                    if st.button("🚀 Growth", key="retire_step4"):
-                        st.session_state.tutorial_steps["retirement"][3] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/retire_graph.png", caption="Graph")
-                        st.audio("https://example.com/audio/growth.mp3", format="audio/mp3")
-                        st.balloons()
-                with col5:
-                    if st.button("💡 Tips", key="retire_step5"):
-                        st.session_state.tutorial_steps["retirement"][4] = True
-                        st.write("Save ₹500 more!")
-                        st.audio("https://example.com/audio/tips.mp3", format="audio/mp3")
-                        st.balloons()
+            st.markdown("### Step 2: Plan Retirement Age")
+            st.write("Slide 'Retirement Age' to 65.")
+            if st.button("I set retirement age!", key="retirement_step2"):
+                st.session_state.tutorial_progress["retirement"]["points"] += 10
+                st.success("Nice! +10 WP - Your future is taking shape!")
+
+            st.markdown("### Step 3: Add Expenses")
+            st.write("Set 'Expected Monthly Expenses' to ₹30,000.")
+            if st.button("I added expenses!", key="retirement_step3"):
+                st.session_state.tutorial_progress["retirement"]["points"] += 10
+                st.success("Great! +10 WP - You’ve planned your retirement life!")
+
+            st.markdown("### Step 4: Plan Retirement")
+            st.write("Click 'Plan My Retirement' to see your forecast.")
+            if st.button("I planned my retirement!", key="retirement_step4"):
+                st.session_state.tutorial_progress["retirement"]["points"] += 20
+                st.success("Success! +20 WP - Your golden vault is secure!")
+                st.session_state.tutorial_progress["retirement"]["completed"] = True
+                st.write("🏅 **Badge Earned: Retirement Guardian**")
 
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
-                age = st.number_input("🎂 Age", min_value=18, max_value=100, value=30)
-                income = st.number_input("💰 Income (₹)", min_value=0.0, step=1000.0)
-                current_savings = st.number_input("🏦 Savings (₹)", min_value=0.0, step=1000.0)
+                age = st.number_input("🎂 Current Age", min_value=18, max_value=100, value=30)
+                income = st.number_input("💰 Monthly Income (₹)", min_value=0.0, step=1000.0)
+                current_savings = st.number_input("🏦 Current Savings (₹)", min_value=0.0, step=1000.0)
             with col2:
-                retirement_age = st.slider("👴 Retire Age", age + 1, 100, 65)
-                monthly_expenses = st.number_input("💸 Expenses (₹)", min_value=0.0, step=500.0)
-                inflation_rate = st.slider("📈 Inflation (%)", 0.0, 10.0, 3.0)
+                retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
+                monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
+                inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0)
+            st.subheader("Additional Income Sources in Retirement")
+            income_sources = st.multiselect("Select Sources", ["Pension", "Rental Income", "Part-Time Work", "Other"])
+            additional_income = sum([st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source) for source in income_sources])
+            submit = st.form_submit_button("🚀 Plan My Retirement")
         
-            st.subheader("Additional Income")
-            income_sources = st.multiselect("Sources", ["Pension", "Rental Income", "Part-Time Work", "Other"])
-            additional_income = sum([st.number_input(f"{source} (₹)", min_value=0.0, step=500.0, key=source) for source in income_sources])
-        
-            submit = st.form_submit_button("🚀 Plan Retirement")
-    
         if submit and financial_data is not None and retirement_model is not None:
-            with st.spinner("Projecting..."):
+            with st.spinner("Projecting your retirement..."):
                 years_to_retirement = retirement_age - age
                 if years_to_retirement <= 0:
-                    st.error("Retire age > current age!")
+                    st.error("🚨 Retirement age must be greater than current age!")
                 else:
                     future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement if monthly_expenses > 0 else 0
                     retirement_goal = future_expenses * 12 * 20
                     annual_additional_income = additional_income * 12
-                    retirement_goal = max(0, retirement_goal - annual_additional_income * 20)
+                    retirement_goal -= annual_additional_income * 20
+                    retirement_goal = max(0, retirement_goal)
                     predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
                     retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
         
                     st.subheader("🌟 Retirement Outlook")
                     col1, col2 = st.columns(2)
-                    col1.metric("Wealth", f"₹{retirement_wealth:,.2f}")
-                    col2.metric("Goal", f"₹{retirement_goal:,.2f}", f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}")
-                
-                    st.subheader("📈 Trajectory")
+                    col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
+                    col2.metric("Inflation-Adjusted Goal (After Income)", f"₹{retirement_goal:,.2f}", 
+                                f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}")
+
+                    st.subheader("📈 Savings Trajectory")
                     trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
                     adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
                     x_values = list(range(years_to_retirement + 1))
-                    if len(x_values) == len(trajectory) == len(adjusted_goals):
-                        fig = px.line(x=x_values, y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth")
-                        fig.add_scatter(x=x_values, y=adjusted_goals, mode='lines', name="Goal", line=dict(dash="dash", color="red"))
+                    if len(x_values) != len(trajectory) or len(x_values) != len(adjusted_goals):
+                        st.error("Data length mismatch detected. Unable to plot trajectory.")
+                    else:
+                        fig = px.line(x=x_values, y=trajectory, labels={"x": "Years", "y": "Wealth (₹)"}, title="Retirement Growth vs Inflation-Adjusted Goal")
+                        fig.add_scatter(x=x_values, y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
                         st.plotly_chart(fig, use_container_width=True)
                 
-                    st.subheader("💡 Tips")
+                    st.subheader("💡 Retirement Tips")
                     if retirement_wealth < retirement_goal:
                         shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
-                        st.write(f"- Save ₹{shortfall:,.2f} more/month")
+                        st.write(f"- Increase monthly savings by ₹{shortfall:,.2f} to meet your inflation-adjusted goal.")
                     if additional_income > 0:
-                        st.write(f"- Extra ₹{additional_income:,.2f}/month helps!")
-                    st.write(f"- Inflation: ₹{future_expenses:,.2f}/month")
+                        st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
+                    st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
+                    st.write("- Consider adjusting investments for higher returns if needed.")
 
+    # Tab 4: Live Market Insights
     with tab4:
-        with st.expander("📚 Tutorial: Mini Market Dashboard"):
-            st.write("Here’s how it works!")
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                st.write("🔑 **Your Key**")
-                st.text_input("Paste your key here!", "DEMO_KEY", disabled=True)
-                st.write("Get it free at alphavantage.co!")
-            with col2:
-                st.write("📋 **Your Stocks**")
-                st.text_area("Type stocks here!", "AAPL\nTSLA", disabled=True)
-                if st.button("Simulate Tracking"):
-                    fig = px.line(x=[1, 2, 3], y=[150, 152, 151], title="AAPL Dummy Price")
-                    st.plotly_chart(fig)
-                    st.write("📰 **News**: Apple launches new gadget!")
-            st.write("🚀 Click 'Track Portfolio & News' to go live!")
         st.header("🌐 Live Market Insights")
-        st.markdown("Track portfolio and news live!")
-
-        # Interactive Tutorial
-        if not all(st.session_state.tutorial_steps["market"]):
-            with st.expander("🎓 Learn How to Track", expanded=True):
-                st.markdown("Unlock insights!")
-                col1, col2, col3, col4, col5 = st.columns(5)
-                with col1:
-                    if st.button("🔑 Why Key?", key="market_step1"):
-                        st.session_state.tutorial_steps["market"][0] = True
-                        st.write("For live data!")
-                        st.audio("https://example.com/audio/why_key.mp3", format="audio/mp3")
-                        st.balloons()
-                with col2:
-                    if st.button("🔒 Get Key", key="market_step2"):
-                        st.session_state.tutorial_steps["market"][1] = True
-                        st.markdown("[Alpha Vantage](https://www.alphavantage.co/)")
-                        st.audio("https://example.com/audio/get_key.mp3", format="audio/mp3")
-                        st.balloons()
-                with col3:
-                    if st.button("📈 Stocks", key="market_step3"):
-                        st.session_state.tutorial_steps["market"][2] = True
-                        st.image("https://github.com/yourusername/artha-screenshots/raw/main/market_input.png", caption="Symbols")
-                        st.audio("https://example.com/audio/stocks.mp3", format="audio/mp3")
-                        st.balloons()
-                with col4:
-                    if st.button("📰 News", key="market_step4"):
-                        st.session_state.tutorial_steps["market"][3] = True
-                        st.write("Sample: 'Apple Up 5%'")
-                        st.audio("https://example.com/audio/news.mp3", format="audio/mp3")
-                        st.balloons()
-                with col5:
-                    if st.button("⚠️ Limits", key="market_step5"):
-                        st.session_state.tutorial_steps["market"][4] = True
-                        st.write("Free key: 5 calls/min")
-                        st.audio("https://example.com/audio/limits.mp3", format="audio/mp3")
-                        st.balloons()
-
-        if not api_key:
-            st.error("Add your Alpha Vantage key!")
-        else:
-            st.subheader("Live Portfolio")
-            portfolio_input = st.text_area("Stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
-            portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
+        st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
+        
+        with st.expander("🎮 Start Your Market Quest (Tutorial)", expanded=not st.session_state.tutorial_progress["market"]["completed"]):
+            st.write("**Quest: Unlock the Market Oracle!**")
+            st.write(f"Wealth Points: {st.session_state.tutorial_progress['market']['points']}/50")
+            progress = st.session_state.tutorial_progress["market"]["points"] / 50
+            st.progress(progress)
             
+            st.markdown("### Step 1: Add Your Key")
+            st.write("Paste your Alpha Vantage key in the sidebar.")
+            if st.button("I added my key!", key="market_step1"):
+                if api_key:
+                    st.session_state.tutorial_progress["market"]["points"] += 10
+                    st.success("Excellent! +10 WP - You’ve unlocked the market gates!")
+                else:
+                    st.error("No key detected! Add it in the sidebar first.")
+
+            st.markdown("### Step 2: Enter a Stock")
+            st.write("Type 'AAPL' in the stock symbols text area.")
+            if st.button("I entered AAPL!", key="market_step2"):
+                st.session_state.tutorial_progress["market"]["points"] += 10
+                st.success("Good job! +10 WP - You’re tracking a stock!")
+
+            st.markdown("### Step 3: Track the Market")
+            st.write("Click 'Track Portfolio & News' to see live data.")
+            if st.button("I tracked the market!", key="market_step3"):
+                if api_key:
+                    st.session_state.tutorial_progress["market"]["points"] += 30
+                    st.success("Masterful! +30 WP - You’re now a market oracle!")
+                    st.session_state.tutorial_progress["market"]["completed"] = True
+                    st.write("🏅 **Badge Earned: Market Oracle**")
+                else:
+                    st.error("Add your API key first!")
+
+        with st.expander("How to Use This?"):
+            st.write("""
+            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar.
+            2. **Pick Stocks**: Edit the list below or use these: AAPL, MSFT, GOOGL, TSLA.
+            3. **Track & Read**: Click 'Track Portfolio & News' to see live prices and headlines!
+            """)
+            st.info("No key yet? Follow the sidebar steps—it’s free!")
+        
+        if not api_key:
+            st.error("Oops! Please add your Alpha Vantage key in the sidebar to access live market insights.")
+        else:
+            st.subheader("Live Portfolio Tracking")
+            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
+            portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
             if st.button("Track Portfolio & News"):
                 total_value = 0
                 for symbol in portfolio:
-                    with st.spinner(f"Fetching {symbol}..."):
+                    with st.spinner(f"Fetching live data for {symbol}..."):
                         df, error = get_stock_data(symbol, api_key)
                         if error or df is None:
                             st.error(f"{symbol}: {error}")
@@ -779,16 +723,15 @@ def main():
                         total_value += latest_price
                         col1, col2 = st.columns(2)
                         with col1:
-                            st.metric(f"{symbol} Price", f"${latest_price:.2f}", f"{performance:.2f}%")
+                            st.metric(label=f"{symbol} Current Price", value=f"${latest_price:.2f}", delta=f"{performance:.2f}%", delta_color="normal")
                         with col2:
                             fig = go.Figure()
-                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines"))
-                            fig.update_layout(title=f"{symbol} Live Price")
+                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
+                            fig.update_layout(title=f"{symbol} Live Price (Last 100 intervals)", xaxis_title="Time", yaxis_title="Price (USD)")
                             st.plotly_chart(fig, use_container_width=True)
-                
-                st.success(f"Total Value: ${total_value:.2f}")
+                st.success(f"Total Portfolio Value: ${total_value:.2f}")
 
-                st.subheader("Latest News")
+                st.subheader("Latest Market News")
                 ticker_for_news = portfolio[0] if portfolio else "AAPL"
                 with st.spinner(f"Fetching news for {ticker_for_news}..."):
                     news_feed, error = get_market_news(api_key, ticker_for_news)
@@ -799,9 +742,13 @@ def main():
                             st.write(f"**{article['title']}**")
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
+                st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
+    # Display Total Progress
     st.markdown("---")
-    st.write("Powered by WealthWise | Built by xAI")
+    total_points = sum(tab["points"] for tab in st.session_state.tutorial_progress.values())
+    st.write(f"**Total Wealth Points: {total_points}** - Keep adventuring to become a Wealth Master!")
+    st.write("Powered by WealthWise | Built with love by xAI")
 
 if __name__ == "__main__":
     main()
