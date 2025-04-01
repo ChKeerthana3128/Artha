@@ -725,7 +725,37 @@ def main():
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
-
+    def speak_text(text):
+    # Escape single quotes in the text to avoid breaking the JavaScript
+    text = text.replace("'", "\\'")
+    # JavaScript code to use the Web Speech API with a fallback
+    js_code = f"""
+    <script>
+        function speakText() {{
+            if ('speechSynthesis' in window) {{
+                const utterance = new SpeechSynthesisUtterance('{text}');
+                utterance.rate = 1.0;  // Speed of speech (0.1 to 10)
+                utterance.volume = 0.9;  // Volume (0 to 1)
+                utterance.lang = 'en-US';  // Language
+                window.speechSynthesis.speak(utterance);
+            }} else {{
+                // Fallback for unsupported browsers
+                const placeholder = document.createElement('div');
+                placeholder.id = 'tts-fallback';
+                document.body.appendChild(placeholder);
+            }}
+        }}
+        speakText();
+    </script>
+    """
+    # Inject the JavaScript into the Streamlit app
+    st.markdown(js_code, unsafe_allow_html=True)
+    # Display a warning if the browser doesn't support Web Speech API
+    st.markdown("""
+    <div id="tts-fallback">
+        <p style="color: orange;">⚠️ Your browser does not support text-to-speech. Please use a modern browser like Chrome or Edge to enable the voice feature.</p>
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
 
