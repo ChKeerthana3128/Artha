@@ -13,7 +13,6 @@ import io
 import os
 import tempfile
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
 
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
@@ -308,65 +307,30 @@ def get_market_news(api_key, tickers="AAPL"):
     except Exception as e:
         return None, f"Error fetching news: {str(e)}"
 
-# Comic Panel Generation Function
-def generate_comic_panel(title, description, scene="default"):
-    # Create a blank image (white background)
-    width, height = 400, 300
-    img = Image.new("RGB", (width, height), "white")
-    draw = ImageDraw.Draw(img)
-
-    # Load a font (default system font if custom font not available)
-    try:
-        font = ImageFont.truetype("arial.ttf", 20)
-        small_font = ImageFont.truetype("arial.ttf", 14)
-    except:
-        font = ImageFont.load_default()
-        small_font = ImageFont.load_default()
-
-    # Draw Priya based on scene
-    if scene == "juggling":  # Priya juggling coins
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
-        draw.line([175, 110, 150, 130], fill="black", width=2)  # Left arm
-        draw.line([175, 110, 200, 130], fill="black", width=2)  # Right arm
-        draw.ellipse([145, 125, 155, 135], fill="yellow", outline="black")  # Coin 1
-        draw.ellipse([195, 125, 205, 135], fill="yellow", outline="black")  # Coin 2
-    elif scene == "chart":  # Priya with a chart
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
-        draw.rectangle([220, 80, 300, 150], outline="black")  # Chart
-        draw.line([220, 150, 300, 100], fill="green", width=2)  # Chart line
-    elif scene == "house":  # Priya with a house
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
-        draw.rectangle([220, 100, 280, 150], fill="lightblue", outline="black")  # House
-        draw.polygon([220, 100, 250, 70, 280, 100], fill="brown", outline="black")  # Roof
-    elif scene == "hammock":  # Priya in a hammock
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 120], fill="black", width=2)  # Upper body
-        draw.line([175, 120, 150, 140], fill="black", width=2)  # Legs
-        draw.line([100, 140, 250, 140], fill="gray", width=2)  # Hammock
-    elif scene == "news":  # Priya with news
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
-        draw.rectangle([220, 80, 300, 120], fill="white", outline="black")  # Newspaper
-        draw.text([230, 90], "News", font=small_font, fill="black")
-    else:  # Default Priya standing
-        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
-        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
-        draw.line([175, 120, 150, 140], fill="black", width=2)  # Left arm
-        draw.line([175, 120, 200, 140], fill="black", width=2)  # Right arm
-
-    # Add a smile to Priya’s face
-    draw.arc([165, 70, 185, 90], 0, 180, fill="black")
-
-    # Add title and description
-    draw.text((10, 10), title, font=font, fill="black")
-    draw.text((10, 220), description, font=small_font, fill="black")
-
-    # Save to a BytesIO buffer for Streamlit
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
+# Comic Panel Loading Function
+def load_comic_panel(scene="default"):
+    comic_folder = "comics"
+    scene_map = {
+        "juggling": "priya_juggling.png",
+        "chart": "priya_chart.png",
+        "house": "priya_house.png",
+        "hammock": "priya_hammock.png",
+        "news": "priya_news.png",
+        "default": "priya_default.png"
+    }
+    filename = scene_map.get(scene, scene_map["default"])
+    filepath = os.path.join(comic_folder, filename)
+    
+    if not os.path.exists(filepath):
+        st.warning(f"Comic image '{filename}' not found in '{comic_folder}'. Using placeholder.")
+        # Return a simple placeholder text as bytes
+        buffer = io.BytesIO()
+        buffer.write(b"Placeholder Comic: Priya in " + scene.encode())
+        buffer.seek(0)
+        return buffer
+    
+    with open(filepath, "rb") as f:
+        buffer = io.BytesIO(f.read())
     buffer.seek(0)
     return buffer
 
@@ -376,10 +340,10 @@ def main():
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
     with st.expander("Meet Priya the Planner!"):
-        comic_buffer = generate_comic_panel("Meet Priya!", "She juggles money and goals!", "juggling")
+        comic_buffer = load_comic_panel("juggling")
         st.image(comic_buffer, caption="Priya the Planner", use_column_width=True)
         st.write("Meet Priya! She’s here to show you how Artha works.")
-        if st.button("Regenerate Priya’s Intro Comic"):
+        if st.button("Reload Priya’s Intro Comic"):
             st.image(comic_buffer, caption="Priya’s Journey", use_column_width=True)
 
     # Load data
@@ -429,53 +393,53 @@ def main():
         st.markdown("Hey there! I’m Priya the Planner, and I’m here to take you on a fun financial adventure with Artha! 🌟 Let’s explore how to grow your money, step by step!")
         
         with st.expander("Step 1: What’s Artha All About?"):
-            comic_buffer = generate_comic_panel("Priya’s Adventure Begins", "Priya with a treasure map!", "juggling")
+            comic_buffer = load_comic_panel("juggling")
             st.image(comic_buffer, caption="Priya’s Treasure Map", use_column_width=True)
             st.write("Artha is like a treasure map for your money! It helps you save, invest, and plan for big dreams—like a cool vacation or a comfy retirement. Ready to dive in?")
             st.success("Tip: Think of Artha as your money’s best friend!")
-            if st.button("Regenerate Step 1 Comic"):
+            if st.button("Reload Step 1 Comic"):
                 st.image(comic_buffer, caption="Priya’s Adventure", use_column_width=True)
 
         with st.expander("Step 2: Play the Stock Market Game"):
-            comic_buffer = generate_comic_panel("Priya’s Stock Play", "Priya checks the charts!", "chart")
+            comic_buffer = load_comic_panel("chart")
             st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
             st.write("In the 'Stock Investments' tab, you pick how much money to put in and how risky you wanna get—like choosing a rollercoaster ride! Artha shows you what might happen.")
             st.info("Fun Fact: Priya loves medium-risk rides—safe but exciting!")
-            if st.button("Regenerate Step 2 Comic"):
+            if st.button("Reload Step 2 Comic"):
                 st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
 
         with st.expander("Step 3: Build Your Dream Plan"):
-            comic_buffer = generate_comic_panel("Priya’s Dream", "Priya plans a house!", "house")
+            comic_buffer = load_comic_panel("house")
             st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
             st.write("Here, in 'Personalized Investment,' you tell Artha your income and dreams—like buying a house. Fill in the boxes, set a goal, and download a plan just for you!")
             st.success("Priya’s Dream: A cozy house by the beach!")
-            if st.button("Regenerate Step 3 Comic"):
+            if st.button("Reload Step 3 Comic"):
                 st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
 
         with st.expander("Step 4: Plan Your Chill Years"):
-            comic_buffer = generate_comic_panel("Priya’s Retirement", "Priya in a hammock!", "hammock")
+            comic_buffer = load_comic_panel("hammock")
             st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
             st.write("In 'Retirement Planning,' you decide when to kick back and relax. Tell Artha your age and expenses—it’ll show if you’re ready for the hammock life!")
             st.warning("Priya says: Save early, chill later!")
-            if st.button("Regenerate Step 4 Comic"):
+            if st.button("Reload Step 4 Comic"):
                 st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
 
         with st.expander("Step 5: Be a Market Wizard"):
-            comic_buffer = generate_comic_panel("Priya’s Market Magic", "Priya reads the news!", "news")
+            comic_buffer = load_comic_panel("news")
             st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
             st.write("In 'Live Market Insights,' you need a special key (from Alpha Vantage) to see live stock prices and news—like magic! Paste it in the sidebar and track your favorites.")
             st.info("Priya’s Favorite: Watching Apple stocks soar!")
-            if st.button("Regenerate Step 5 Comic"):
+            if st.button("Reload Step 5 Comic"):
                 st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
 
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         with st.expander("See How Priya Did It!"):
-            comic_buffer = generate_comic_panel("Priya’s Stock Play", "Priya checks the charts!", "chart")
+            comic_buffer = load_comic_panel("chart")
             st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
             st.write("Priya explores stocks to grow her savings!")
-            if st.button("Regenerate Stock Comic"):
+            if st.button("Reload Stock Comic"):
                 st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
         
         with st.form(key="stock_form"):
@@ -528,10 +492,10 @@ def main():
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.expander("See How Priya Did It!"):
-            comic_buffer = generate_comic_panel("Priya’s Dream", "Priya plans a house!", "house")
+            comic_buffer = load_comic_panel("house")
             st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
             st.write("Priya builds a personalized plan for her dream house!")
-            if st.button("Regenerate Investment Comic"):
+            if st.button("Reload Investment Comic"):
                 st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
         
         with st.form(key="investment_form"):
@@ -628,10 +592,10 @@ def main():
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
         with st.expander("See How Priya Did It!"):
-            comic_buffer = generate_comic_panel("Priya’s Retirement", "Priya in a hammock!", "hammock")
+            comic_buffer = load_comic_panel("hammock")
             st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
             st.write("Priya plans her retirement paradise!")
-            if st.button("Regenerate Retirement Comic"):
+            if st.button("Reload Retirement Comic"):
                 st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
     
         with st.form(key="retirement_form"):
@@ -707,10 +671,10 @@ def main():
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news!")
         with st.expander("See How Priya Did It!"):
-            comic_buffer = generate_comic_panel("Priya’s Market Magic", "Priya reads the news!", "news")
+            comic_buffer = load_comic_panel("news")
             st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
             st.write("Priya tracks the market live to stay ahead!")
-            if st.button("Regenerate Market Comic"):
+            if st.button("Reload Market Comic"):
                 st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
 
         with st.expander("How to Use This?"):
