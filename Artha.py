@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -11,8 +12,8 @@ from fpdf import FPDF
 import io
 import os
 import tempfile
-import plotly.graph_objects as go
 from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
 
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
@@ -307,15 +308,79 @@ def get_market_news(api_key, tickers="AAPL"):
     except Exception as e:
         return None, f"Error fetching news: {str(e)}"
 
+# Comic Panel Generation Function
+def generate_comic_panel(title, description, scene="default"):
+    # Create a blank image (white background)
+    width, height = 400, 300
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
+
+    # Load a font (default system font if custom font not available)
+    try:
+        font = ImageFont.truetype("arial.ttf", 20)
+        small_font = ImageFont.truetype("arial.ttf", 14)
+    except:
+        font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+
+    # Draw Priya based on scene
+    if scene == "juggling":  # Priya juggling coins
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
+        draw.line([175, 110, 150, 130], fill="black", width=2)  # Left arm
+        draw.line([175, 110, 200, 130], fill="black", width=2)  # Right arm
+        draw.ellipse([145, 125, 155, 135], fill="yellow", outline="black")  # Coin 1
+        draw.ellipse([195, 125, 205, 135], fill="yellow", outline="black")  # Coin 2
+    elif scene == "chart":  # Priya with a chart
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
+        draw.rectangle([220, 80, 300, 150], outline="black")  # Chart
+        draw.line([220, 150, 300, 100], fill="green", width=2)  # Chart line
+    elif scene == "house":  # Priya with a house
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
+        draw.rectangle([220, 100, 280, 150], fill="lightblue", outline="black")  # House
+        draw.polygon([220, 100, 250, 70, 280, 100], fill="brown", outline="black")  # Roof
+    elif scene == "hammock":  # Priya in a hammock
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 120], fill="black", width=2)  # Upper body
+        draw.line([175, 120, 150, 140], fill="black", width=2)  # Legs
+        draw.line([100, 140, 250, 140], fill="gray", width=2)  # Hammock
+    elif scene == "news":  # Priya with news
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
+        draw.rectangle([220, 80, 300, 120], fill="white", outline="black")  # Newspaper
+        draw.text([230, 90], "News", font=small_font, fill="black")
+    else:  # Default Priya standing
+        draw.ellipse([150, 50, 200, 100], fill="peachpuff", outline="black")  # Head
+        draw.line([175, 100, 175, 150], fill="black", width=2)  # Body
+        draw.line([175, 120, 150, 140], fill="black", width=2)  # Left arm
+        draw.line([175, 120, 200, 140], fill="black", width=2)  # Right arm
+
+    # Add a smile to Priya’s face
+    draw.arc([165, 70, 185, 90], 0, 180, fill="black")
+
+    # Add title and description
+    draw.text((10, 10), title, font=font, fill="black")
+    draw.text((10, 220), description, font=small_font, fill="black")
+
+    # Save to a BytesIO buffer for Streamlit
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
 # Main Application
 def main():
-    # Intro Comic Panel
+    # Intro
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
     with st.expander("Meet Priya the Planner!"):
-        st.write("**Comic Panel**: Priya juggling money and goals with a big smile.")
+        comic_buffer = generate_comic_panel("Meet Priya!", "She juggles money and goals!", "juggling")
+        st.image(comic_buffer, caption="Priya the Planner", use_column_width=True)
         st.write("Meet Priya! She’s here to show you how Artha works.")
-        st.write("Want me to create Priya’s journey as an image? Just say yes!")
+        if st.button("Regenerate Priya’s Intro Comic"):
+            st.image(comic_buffer, caption="Priya’s Journey", use_column_width=True)
 
     # Load data
     stock_data = load_stock_data()
@@ -334,7 +399,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar with API Key Explanation
+    # Sidebar
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -356,67 +421,62 @@ def main():
         3. Copy the code and paste it here!
         """)
 
-    # Tabs with Tutorial Added
+    # Tabs
     tab0, tab1, tab2, tab3, tab4 = st.tabs(["📖 Tutorial", "📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
     with tab0:
         st.header("📖 Priya’s Guide to Artha")
         st.markdown("Hey there! I’m Priya the Planner, and I’m here to take you on a fun financial adventure with Artha! 🌟 Let’s explore how to grow your money, step by step!")
         
-        # Step 1: Intro to Artha
         with st.expander("Step 1: What’s Artha All About?"):
-            st.write("**Comic Panel**: Priya holding a treasure map labeled 'Artha' with coins and goals around her.")
+            comic_buffer = generate_comic_panel("Priya’s Adventure Begins", "Priya with a treasure map!", "juggling")
+            st.image(comic_buffer, caption="Priya’s Treasure Map", use_column_width=True)
             st.write("Artha is like a treasure map for your money! It helps you save, invest, and plan for big dreams—like a cool vacation or a comfy retirement. Ready to dive in?")
             st.success("Tip: Think of Artha as your money’s best friend!")
+            if st.button("Regenerate Step 1 Comic"):
+                st.image(comic_buffer, caption="Priya’s Adventure", use_column_width=True)
 
-        # Step 2: Stock Investments
         with st.expander("Step 2: Play the Stock Market Game"):
-            st.write("**Comic Panel**: Priya tossing a coin into a stock chart that sparkles.")
+            comic_buffer = generate_comic_panel("Priya’s Stock Play", "Priya checks the charts!", "chart")
+            st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
             st.write("In the 'Stock Investments' tab, you pick how much money to put in and how risky you wanna get—like choosing a rollercoaster ride! Artha shows you what might happen.")
-            st.write("Try it: Slide the bars, pick your goals (like growing cash), and hit 'Explore Market'!")
             st.info("Fun Fact: Priya loves medium-risk rides—safe but exciting!")
+            if st.button("Regenerate Step 2 Comic"):
+                st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
 
-        # Step 3: Personalized Investment
         with st.expander("Step 3: Build Your Dream Plan"):
-            st.write("**Comic Panel**: Priya sketching a house with a piggy bank next to it.")
+            comic_buffer = generate_comic_panel("Priya’s Dream", "Priya plans a house!", "house")
+            st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
             st.write("Here, in 'Personalized Investment,' you tell Artha your income and dreams—like buying a house. Fill in the boxes, set a goal, and download a plan just for you!")
-            st.write("Try it: Add your name, money details, and click 'Get Your Plan'!")
             st.success("Priya’s Dream: A cozy house by the beach!")
+            if st.button("Regenerate Step 3 Comic"):
+                st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
 
-        # Step 4: Retirement Planning
         with st.expander("Step 4: Plan Your Chill Years"):
-            st.write("**Comic Panel**: Priya lounging in a hammock with a lemonade, smiling at a savings graph.")
+            comic_buffer = generate_comic_panel("Priya’s Retirement", "Priya in a hammock!", "hammock")
+            st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
             st.write("In 'Retirement Planning,' you decide when to kick back and relax. Tell Artha your age and expenses—it’ll show if you’re ready for the hammock life!")
-            st.write("Try it: Slide your retirement age and hit 'Plan My Retirement'!")
             st.warning("Priya says: Save early, chill later!")
+            if st.button("Regenerate Step 4 Comic"):
+                st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
 
-        # Step 5: Live Market Insights
         with st.expander("Step 5: Be a Market Wizard"):
-            st.write("**Comic Panel**: Priya with a magic wand, making stock prices and news pop up.")
+            comic_buffer = generate_comic_panel("Priya’s Market Magic", "Priya reads the news!", "news")
+            st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
             st.write("In 'Live Market Insights,' you need a special key (from Alpha Vantage) to see live stock prices and news—like magic! Paste it in the sidebar and track your favorites.")
-            st.write("Try it: Add your key, type stock names (like AAPL), and click 'Track Portfolio & News'!")
             st.info("Priya’s Favorite: Watching Apple stocks soar!")
-
-        # Mini Quiz for Fun
-        st.subheader("🎉 Priya’s Quick Quiz")
-        st.write("Let’s see if you’re ready to roll with Artha! Click to answer:")
-        with st.expander("What does the 'Stock Investments' tab do?"):
-            answer = st.radio("Pick one:", ["A) Plans your vacation", "B) Predicts stock growth", "C) Cooks dinner"])
-            if answer == "B) Predicts stock growth":
-                st.success("Yay! You got it! Priya’s proud of you! 🎉")
-            else:
-                st.write("Oops! It’s about guessing how stocks grow. Try again!")
-
-        st.write("That’s it! Explore the tabs, and let’s make your money grow with Priya! 🚀")
-        st.write("Want Priya’s tutorial as a cool comic image? Just say yes!")
+            if st.button("Regenerate Step 5 Comic"):
+                st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
 
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
         with st.expander("See How Priya Did It!"):
-            st.write("**Comic Panel**: Priya selecting risk and seeing a chart.")
+            comic_buffer = generate_comic_panel("Priya’s Stock Play", "Priya checks the charts!", "chart")
+            st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
             st.write("Priya explores stocks to grow her savings!")
-            st.write("Want me to create Priya’s journey as an image? Just say yes!")
+            if st.button("Regenerate Stock Comic"):
+                st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
         
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
@@ -468,9 +528,11 @@ def main():
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
         with st.expander("See How Priya Did It!"):
-            st.write("**Comic Panel**: Priya inputting data and downloading a PDF.")
+            comic_buffer = generate_comic_panel("Priya’s Dream", "Priya plans a house!", "house")
+            st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
             st.write("Priya builds a personalized plan for her dream house!")
-            st.write("Want me to create Priya’s journey as an image? Just say yes!")
+            if st.button("Regenerate Investment Comic"):
+                st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
         
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
@@ -559,14 +621,6 @@ def main():
                 for tip in tips:
                     st.write(f"- {tip}")
 
-            st.subheader("🎲 Risk Tolerance Assessment")
-            risk_map = {"Low": "Safe", "Medium": "Balanced", "High": "Aggressive"}
-            st.write(f"Your Profile: *{risk_map[risk_tolerance]}*")
-            if risk_tolerance == "Low" and horizon_years > 5:
-                st.info("Long horizon with low risk? Explore medium-risk options.")
-            elif risk_tolerance == "High" and horizon_years < 3:
-                st.warning("Short horizon with high risk? Consider safer options.")
-
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
@@ -574,9 +628,11 @@ def main():
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
         with st.expander("See How Priya Did It!"):
-            st.write("**Comic Panel**: Priya adjusting sliders and smiling at a graph.")
+            comic_buffer = generate_comic_panel("Priya’s Retirement", "Priya in a hammock!", "hammock")
+            st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
             st.write("Priya plans her retirement paradise!")
-            st.write("Want me to create Priya’s journey as an image? Just say yes!")
+            if st.button("Regenerate Retirement Comic"):
+                st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
     
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
@@ -651,9 +707,11 @@ def main():
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news!")
         with st.expander("See How Priya Did It!"):
-            st.write("**Comic Panel**: Priya entering an API key and reading news.")
+            comic_buffer = generate_comic_panel("Priya’s Market Magic", "Priya reads the news!", "news")
+            st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
             st.write("Priya tracks the market live to stay ahead!")
-            st.write("Want me to create Priya’s journey as an image? Just say yes!")
+            if st.button("Regenerate Market Comic"):
+                st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
 
         with st.expander("How to Use This?"):
             st.write("""
@@ -709,7 +767,6 @@ def main():
                             st.write(f"**{article['title']}**")
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
-                st.info("News access limited with free key. Consider premium.")
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
