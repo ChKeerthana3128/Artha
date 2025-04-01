@@ -290,7 +290,9 @@ def get_stock_data(symbol, api_key):
         if "Time Series (5min)" not in data:
             return None, "Error: Invalid symbol, API key, or rate limit reached."
         time_series = data["Time Series (5min)"]
-        df = pd.DataFrame.from_dict(time_series, orient="index").astype(float)
+        df = pd.DataFrame.from_dict(time_series,
+
+ orient="index").astype(float)
         df.index = pd.to_datetime(df.index)
         df.columns = ["Open", "High", "Low", "Close", "Volume"]
         return df, None
@@ -657,6 +659,20 @@ def main():
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news—your key unlocks this magic!")
+        
+        # Quiz at the start of Tab 4 (fixed indentation and added expander)
+        with st.expander("Quick Quiz: What’s This Tab About?"):
+            st.write("Test your understanding of the Live Market Insights tab!")
+            q1 = st.radio(
+                "What does this tab require to work?",
+                ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
+                key="q1_market_intro"
+            )
+            q2 = st.radio(
+                "What can you track here?",
+                ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
+                key="q2_market_intro"
+            )
             if st.button("Check Answers", key="market_intro_submit"):
                 if q1 == "An API key" and q2 == "Stock prices and market news":
                     st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
