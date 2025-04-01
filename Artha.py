@@ -370,15 +370,15 @@ def main():
             q1 = st.radio(
                 "What can you do with this tab?",
                 ["Track live stock prices", "Plan your retirement", "Analyze stock trends and get recommendations", "Check market news"],
-                key="q1_stock"
+                key="q1_stock_intro"
             )
             q2 = st.radio(
                 "What does 'Risk Appetite' influence?",
                 ["The amount you invest", "The types of investments recommended", "Your retirement age", "Your monthly expenses"],
-                key="q2_stock"
+                key="q2_stock_intro"
             )
             
-            if st.button("Check Answers", key="stock_submit"):
+            if st.button("Check Answers", key="stock_intro_submit"):
                 if q1 == "Analyze stock trends and get recommendations" and q2 == "The types of investments recommended":
                     st.success("Great job! This tab helps you analyze stock trends and suggests investments based on your risk and goals.")
                 else:
@@ -430,6 +430,25 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
+        
+        # Quiz at the end of Tab 1
+        with st.expander("Quick Recap Quiz: Stock Investments"):
+            st.write("Let’s see how well you understood this tab!")
+            q1_end = st.radio(
+                "What does this tab predict?",
+                ["Your retirement savings", "Stock price trends", "Your monthly expenses", "Live stock prices"],
+                key="q1_stock_end"
+            )
+            q2_end = st.radio(
+                "What happens if no investments match your criteria?",
+                ["You get an error", "It suggests increasing investment amount or adjusting preferences", "It shows random options", "It skips to the next tab"],
+                key="q2_stock_end"
+            )
+            if st.button("Check Recap Answers", key="stock_end_submit"):
+                if q1_end == "Stock price trends" and q2_end == "It suggests increasing investment amount or adjusting preferences":
+                    st.success("Well done! You’ve got the hang of this tab—it predicts stock trends and guides you if no options fit.")
+                else:
+                    st.warning("Not quite! This tab predicts stock price trends and suggests tweaking your input if no investments match.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -441,15 +460,15 @@ def main():
             q1 = st.radio(
                 "What does this tab help you create?",
                 ["A stock portfolio", "A personalized investment plan", "A retirement forecast", "A live market dashboard"],
-                key="q1_invest"
+                key="q1_invest_intro"
             )
             q2 = st.radio(
                 "What factors does it consider?",
                 ["Your age and retirement goals", "Live stock prices", "Income, expenses, risk, and goals", "Market news sentiment"],
-                key="q2_invest"
+                key="q2_invest_intro"
             )
             
-            if st.button("Check Answers", key="invest_submit"):
+            if st.button("Check Answers", key="invest_intro_submit"):
                 if q1 == "A personalized investment plan" and q2 == "Income, expenses, risk, and goals":
                     st.success("Nice work! This tab builds a custom investment plan using your financial details, risk tolerance, and goals.")
                 else:
@@ -551,8 +570,27 @@ def main():
             elif risk_tolerance == "High" and horizon_years < 3:
                 st.warning("Short horizon with high risk? Consider safer options to protect your funds.")
 
-            pdf_buffer = generate_pdf(name, income, predicted_savings, ", HCCFjoin(goals)", risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
+            pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+        
+        # Quiz at the end of Tab 2
+        with st.expander("Quick Recap Quiz: Personalized Investment"):
+            st.write("Let’s recap what you learned from this tab!")
+            q1_end = st.radio(
+                "What does this tab generate?",
+                ["A stock chart", "A personalized investment plan with a PDF", "A retirement timeline", "Live market news"],
+                key="q1_invest_end"
+            )
+            q2_end = st.radio(
+                "What does the 'Time to Goal' chart show?",
+                ["Your stock growth", "How long to reach your savings goal", "Your retirement age", "Peer savings comparison"],
+                key="q2_invest_end"
+            )
+            if st.button("Check Recap Answers", key="invest_end_submit"):
+                if q1_end == "A personalized investment plan with a PDF" and q2_end == "How long to reach your savings goal":
+                    st.success("Great job! This tab creates a custom plan with a downloadable PDF and shows how long it’ll take to hit your savings goal.")
+                else:
+                    st.warning("Not quite! This tab gives you a personalized investment plan (with a PDF) and a timeline to your savings goal.")
 
     with tab3:
         st.header("🏡 Retirement Planning")
@@ -564,15 +602,15 @@ def main():
             q1 = st.radio(
                 "What’s the main goal of this tab?",
                 ["Track stock trends", "Plan your retirement savings", "Get live market updates", "Build a budget"],
-                key="q1_retire"
+                key="q1_retire_intro"
             )
             q2 = st.radio(
                 "What can reduce your retirement savings need?",
                 ["Higher risk investments", "Lower stock prices", "Additional income sources", "More debt"],
-                key="q2_retire"
+                key="q2_retire_intro"
             )
             
-            if st.button("Check Answers", key="retire_submit"):
+            if st.button("Check Answers", key="retire_intro_submit"):
                 if q1 == "Plan your retirement savings" and q2 == "Additional income sources":
                     st.success("Well done! This tab helps you plan retirement savings, and additional income (like pensions) can lower what you need to save.")
                 else:
@@ -659,6 +697,25 @@ def main():
                         st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
                     st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
                     st.write("- Consider adjusting investments for higher returns if needed.")
+        
+        # Quiz at the end of Tab 3
+        with st.expander("Quick Recap Quiz: Retirement Planning"):
+            st.write("Let’s review what you’ve learned here!")
+            q1_end = st.radio(
+                "What does this tab forecast?",
+                ["Stock market trends", "Your retirement wealth and needs", "Your monthly budget", "Live stock prices"],
+                key="q1_retire_end"
+            )
+            q2_end = st.radio(
+                "How does additional income affect your retirement goal?",
+                ["Increases it", "Reduces the savings you need", "Doesn’t affect it", "Only affects expenses"],
+                key="q2_retire_end"
+            )
+            if st.button("Check Recap Answers", key="retire_end_submit"):
+                if q1_end == "Your retirement wealth and needs" and q2_end == "Reduces the savings you need":
+                    st.success("Nice one! This tab forecasts your retirement wealth and needs, and additional income lowers the savings required.")
+                else:
+                    st.warning("Not quite! This tab predicts your retirement wealth and needs, with additional income reducing your savings target.")
 
     with tab4:
         st.header("🌐 Live Market Insights")
@@ -670,15 +727,15 @@ def main():
             q1 = st.radio(
                 "What does this tab require to work?",
                 ["A retirement plan", "An API key", "A savings goal", "A risk profile"],
-                key="q1_market"
+                key="q1_market_intro"
             )
             q2 = st.radio(
                 "What can you track here?",
                 ["Your monthly budget", "Stock prices and market news", "Retirement savings growth", "Investment recommendations"],
-                key="q2_market"
+                key="q2_market_intro"
             )
             
-            if st.button("Check Answers", key="market_submit"):
+            if st.button("Check Answers", key="market_intro_submit"):
                 if q1 == "An API key" and q2 == "Stock prices and market news":
                     st.success("Awesome! This tab uses an API key to show live stock prices and market news.")
                 else:
