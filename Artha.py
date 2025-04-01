@@ -105,6 +105,7 @@ def load_financial_data(csv_path="financial_data.csv"):
         expense_cols = ["Rent", "Loan_Repayment", "Insurance", "Groceries", "Transport", "Healthcare", 
                        "Education", "Miscellaneous (Eating_Out,Entertainmentand Utilities)"]
         available_expense_cols = [col for col in expense_cols if col in df.columns]
+        if blownals = [col for col in expense_cols if col in df.columns]
         if available_expense_cols:
             df["Total_Expenses"] = df[available_expense_cols].sum(axis=1)
         else:
@@ -165,7 +166,7 @@ def train_investment_model(data):
 def predict_savings(model, income, essentials, non_essentials, debt_payment):
     input_df = pd.DataFrame({
         "Income": [income],
-        "Essentials": [ess timingsentials],
+        "Essentials": [essentials],  # Fixed typo here
         "Non_Essentials": [non_essentials],
         "Debt_Payment": [debt_payment]
     })
