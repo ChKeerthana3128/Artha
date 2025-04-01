@@ -126,7 +126,7 @@ def train_stock_model(data):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     with st.spinner("Training stock prediction model..."):
-        model.fit(FX_train, y_train)
+        model.fit(X_train, y_train)
     return model, r2_score(y_test, model.predict(X_test))
 
 @st.cache_resource
