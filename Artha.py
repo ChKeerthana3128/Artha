@@ -369,7 +369,7 @@ def main():
                 horizon = st.slider("⏳ Investment Horizon (Months)", 1, 60, 12, help="How long will you invest?")
                 invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0, help="How much are you investing?")
             with col2:
-                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High'"], help="Your comfort with risk")
+                risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"], help="Your comfort with risk")
                 goals = st.multiselect(
                     "🎯 Goals",
                     ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
@@ -409,6 +409,18 @@ def main():
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
             if not any_recommendations:
                 st.info("No investment options match your criteria. Try increasing your investment amount or adjusting your risk tolerance/goals.")
+        
+        # FAQs for Stock Investments at the bottom
+        st.markdown("---")
+        st.subheader("Frequently Asked Questions (FAQs)")
+        with st.expander("📈 How does this tab help me invest in stocks?"):
+            st.write("It uses historical NIFTY CONSUMPTION data and a machine learning model to predict future stock prices, offering tailored investment recommendations based on your horizon, amount, risk tolerance, and goals.")
+        with st.expander("⏳ What does Investment Horizon mean?"):
+            st.write("It’s the time (in months) you plan to keep your money invested. Longer horizons might allow for riskier, higher-return options.")
+        with st.expander("💡 How are investment recommendations generated?"):
+            st.write("A Random Forest model evaluates options like Reliance Industries or Bitcoin based on minimum investment, risk, goals, expected returns, and volatility, then suggests a diversified strategy across categories (Large Cap, Crypto, etc.).")
+        with st.expander("📊 What does the Price Trend chart show?"):
+            st.write("It displays the historical closing prices of the NIFTY CONSUMPTION index, helping you visualize past performance alongside the predicted growth.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
@@ -511,6 +523,20 @@ def main():
 
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
+        
+        # FAQs for Personalized Investment at the bottom
+        st.markdown("---")
+        st.subheader("Frequently Asked Questions (FAQs)")
+        with st.expander("🎯 How does this tab create my investment plan?"):
+            st.write("It predicts your monthly savings using a model trained on survey data, then recommends investments based on your income, expenses, risk tolerance, and goals—complete with a downloadable PDF plan!")
+        with st.expander("💰 What’s included in the Monthly Breakdown?"):
+            st.write("A pie chart shows how your income splits into essentials (food, transport), non-essentials (entertainment), debt payments, and savings.")
+        with st.expander("📅 How does it calculate Time to Goal?"):
+            st.write("It divides your total goal amount by your predicted monthly savings to estimate how many years you’ll need, assuming consistent saving.")
+        with st.expander("💡 What are Personalized Budget Tips?"):
+            st.write("Tips are tailored to your spending habits—like reducing non-essentials if they’re above average or boosting savings if you’re short of your goal—compared to peer data.")
+        with st.expander("📥 What’s in the downloadable PDF?"):
+            st.write("It includes your financial summary (income, savings, goals), investment recommendations, budget tips, and a peer savings comparison.")
 
     with tab3:
         st.header("🏡 Retirement Planning")
@@ -592,6 +618,18 @@ def main():
                         st.write(f"- Your additional income of ₹{additional_income:,.2f}/month reduces your savings burden significantly!")
                     st.write(f"- Inflation at {inflation_rate}% increases your future expenses to ₹{future_expenses:,.2f}/month.")
                     st.write("- Consider adjusting investments for higher returns if needed.")
+        
+        # FAQs for Retirement Planning at the bottom
+        st.markdown("---")
+        st.subheader("Frequently Asked Questions (FAQs)")
+        with st.expander("🏡 How does this tab plan my retirement?"):
+            st.write("It forecasts your retirement wealth based on current savings, income, expenses, and years to retirement, factoring in inflation and additional income sources like pensions.")
+        with st.expander("📈 What’s the Savings Trajectory chart?"):
+            st.write("It plots your projected wealth over time against an inflation-adjusted retirement goal, showing if you’re on track or need adjustments.")
+        with st.expander("💸 How does inflation affect my plan?"):
+            st.write("Your expected monthly expenses are adjusted upward based on the inflation rate you choose (e.g., 3% per year), increasing your savings goal.")
+        with st.expander("💡 What if I have additional income in retirement?"):
+            st.write("Income from pensions or rentals reduces the savings you need, as it offsets your retirement expenses for 20 years post-retirement.")
 
     with tab4:
         st.header("🌐 Live Market Insights")
@@ -660,66 +698,27 @@ def main():
                             st.write(article["summary"])
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
+        
+        # FAQs for Live Market Insights at the bottom
+        st.markdown("---")
+        st.subheader("Frequently Asked Questions (FAQs)")
+        with st.expander("🌐 What does this tab do?"):
+            st.write("With an Alpha Vantage API key, it fetches real-time stock prices (e.g., AAPL, TSLA) and market news, letting you track your portfolio live.")
+        with st.expander("🔑 Why do I need an API key?"):
+            st.write("The key unlocks live data from Alpha Vantage—it’s like a pass to access current stock prices and news instead of relying on historical data.")
+        with st.expander("📊 How do I track my portfolio?"):
+            st.write("Enter stock symbols (one per line, like AAPL or MSFT), click 'Track Portfolio & News,' and see live prices with 5-minute interval charts.")
+        with st.expander("📰 What kind of news will I see?"):
+            st.write("You’ll get the latest headlines and summaries for your chosen stock (e.g., AAPL), though free keys limit the number of articles—premium keys unlock more.")
 
-    # FAQs Section at the Bottom
+    # General Questions (not repeated in each tab)
     st.markdown("---")
-    st.header("Frequently Asked Questions (FAQs)")
-
-    # Function to display General Questions
-    def display_general_questions():
-        st.subheader("General Questions")
-        with st.expander("🌟 What is Artha?"):
-            st.write("Artha is a wealth management web app designed to help you plan investments, track stocks, prepare for retirement, and stay updated with live market insights—all in one place!")
-        with st.expander("👥 Who can use Artha?"):
-            st.write("- *Investors* looking to explore stock and investment options.\n- *Individuals* planning personal savings or retirement.\n- *Market enthusiasts* wanting real-time stock prices and news.")
-
-    # Stock Investments FAQs
-    display_general_questions()
-    st.subheader("Stock Investments")
-    with st.expander("📈 How does this tab help me invest in stocks?"):
-        st.write("It uses historical NIFTY CONSUMPTION data and a machine learning model to predict future stock prices, offering tailored investment recommendations based on your horizon, amount, risk tolerance, and goals.")
-    with st.expander("⏳ What does Investment Horizon mean?"):
-        st.write("It’s the time (in months) you plan to keep your money invested. Longer horizons might allow for riskier, higher-return options.")
-    with st.expander("💡 How are investment recommendations generated?"):
-        st.write("A Random Forest model evaluates options like Reliance Industries or Bitcoin based on minimum investment, risk, goals, expected returns, and volatility, then suggests a diversified strategy across categories (Large Cap, Crypto, etc.).")
-    with st.expander("📊 What does the Price Trend chart show?"):
-        st.write("It displays the historical closing prices of the NIFTY CONSUMPTION index, helping you visualize past performance alongside the predicted growth.")
-
-    # Personalized Investment FAQs
-    st.subheader("Personalized Investment")
-    with st.expander("🎯 How does this tab create my investment plan?"):
-        st.write("It predicts your monthly savings using a model trained on survey data, then recommends investments based on your income, expenses, risk tolerance, and goals—complete with a downloadable PDF plan!")
-    with st.expander("💰 What’s included in the Monthly Breakdown?"):
-        st.write("A pie chart shows how your income splits into essentials (food, transport), non-essentials (entertainment), debt payments, and savings.")
-    with st.expander("📅 How does it calculate Time to Goal?"):
-        st.write("It divides your total goal amount by your predicted monthly savings to estimate how many years you’ll need, assuming consistent saving.")
-    with st.expander("💡 What are Personalized Budget Tips?"):
-        st.write("Tips are tailored to your spending habits—like reducing non-essentials if they’re above average or boosting savings if you’re short of your goal—compared to peer data.")
-    with st.expander("📥 What’s in the downloadable PDF?"):
-        st.write("It includes your financial summary (income, savings, goals), investment recommendations, budget tips, and a peer savings comparison.")
-
-    # Retirement Planning FAQs
-    st.subheader("Retirement Planning")
-    with st.expander("🏡 How does this tab plan my retirement?"):
-        st.write("It forecasts your retirement wealth based on current savings, income, expenses, and years to retirement, factoring in inflation and additional income sources like pensions.")
-    with st.expander("📈 What’s the Savings Trajectory chart?"):
-        st.write("It plots your projected wealth over time against an inflation-adjusted retirement goal, showing if you’re on track or need adjustments.")
-    with st.expander("💸 How does inflation affect my plan?"):
-        st.write("Your expected monthly expenses are adjusted upward based on the inflation rate you choose (e.g., 3% per year), increasing your savings goal.")
-    with st.expander("💡 What if I have additional income in retirement?"):
-        st.write("Income from pensions or rentals reduces the savings you need, as it offsets your retirement expenses for 20 years post-retirement.")
-
-    # Live Market Insights FAQs
-    st.subheader("Live Market Insights")
-    with st.expander("🌐 What does this tab do?"):
-        st.write("With an Alpha Vantage API key, it fetches real-time stock prices (e.g., AAPL, TSLA) and market news, letting you track your portfolio live.")
-    with st.expander("🔑 Why do I need an API key?"):
-        st.write("The key unlocks live data from Alpha Vantage—it’s like a pass to access current stock prices and news instead of relying on historical data.")
-    with st.expander("📊 How do I track my portfolio?"):
-        st.write("Enter stock symbols (one per line, like AAPL or MSFT), click 'Track Portfolio & News,' and see live prices with 5-minute interval charts.")
-    with st.expander("📰 What kind of news will I see?"):
-        st.write("You’ll get the latest headlines and summaries for your chosen stock (e.g., AAPL), though free keys limit the number of articles—premium keys unlock more.")
-
+    st.header("General Questions")
+    with st.expander("🌟 What is Artha?"):
+        st.write("Artha is a wealth management web app designed to help you plan investments, track stocks, prepare for retirement, and stay updated with live market insights—all in one place!")
+    with st.expander("👥 Who can use Artha?"):
+        st.write("- *Investors* looking to explore stock and investment options.\n- *Individuals* planning personal savings or retirement.\n- *Market enthusiasts* wanting real-time stock prices and news.")
+    
     st.markdown("---")
     st.write("Powered by Artha")
 
