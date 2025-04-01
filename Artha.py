@@ -659,11 +659,12 @@ def main():
                             st.write(f"[Read more]({article['url']})")
                 st.info("News access is limited with a free Alpha Vantage key. For more, consider a premium key.")
 
-# Add custom CSS for minimal, professional styling
-st.markdown("""
+
+    # Add custom CSS for minimal, professional styling
+    st.markdown("""
     <style>
-        .faq-title {
-            font-size: 28px;
+    .faq-title {
+    ont-size: 28px;
             font-weight: bold;
             text-align: center;
             color: #333333;  /* Dark gray for professionalism */
@@ -750,6 +751,8 @@ with tab4:
         st.write("Enter stock symbols (one per line, like AAPL or MSFT), click 'Track Portfolio & News,' and see live prices with 5-minute interval charts.")
     with st.expander("📰 What kind of news will I see?"):
         st.write("You’ll get the latest headlines and summaries for your chosen stock (e.g., AAPL), though free keys limit the number of articles—premium keys unlock more.")
+
+
 
     st.markdown("---")
     st.write("Powered by Artha")
