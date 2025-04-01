@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -12,6 +11,7 @@ from fpdf import FPDF
 import io
 import os
 import tempfile
+import plotly.graph_objects as go
 from datetime import datetime
 
 # Page Configuration
@@ -120,7 +120,7 @@ def train_stock_model(data):
     data['Day'] = data['Date'].dt.day
     data['Month'] = data['Date'].dt.month
     data['Year'] = data['Date'].dt.year
-    X = data[['Day', 'Month', 'Year']]
+    X = data[['Day', ' Month', 'Year']]
     y = data['close']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -220,62 +220,41 @@ def predict_investment_strategy(model, invest_amount, risk_tolerance, horizon_ye
 def generate_pdf(name, income, predicted_savings, goal, risk_tolerance, horizon_years, recommendations, peer_savings, tips):
     pdf = FPDF()
     pdf.add_page()
-    font_path = "DejaVuSans.ttf"
-    if os.path.exists(font_path):
-        pdf.add_font('DejaVu', '', font_path, uni=True)
-        pdf.set_font('DejaVu', '', 16)
-    else:
-        pdf.set_font("Arial", "B", 16)
-
-    def clean_text(text):
-        if isinstance(text, str):
-            return text.encode('latin-1', 'replace').decode('latin-1')
-        return str(text)
-
-    pdf.cell(0, 10, clean_text(f"WealthWise Investment Plan for {name}"), ln=True, align="C")
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"WealthWise Investment Plan for {name}", ln=True, align="C")
     pdf.set_font("Arial", "", 10)
     pdf.cell(0, 10, "Powered by WealthWise | Built with love by xAI", ln=True, align="C")
     pdf.ln(10)
-
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Financial Summary", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, clean_text(f"Income: INR {income:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Predicted Savings: INR {predicted_savings:,.2f}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Goal: {goal}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Risk Tolerance: {risk_tolerance}"), ln=True)
-    pdf.cell(0, 10, clean_text(f"Investment Horizon: {horizon_years} years"), ln=True)
+    pdf.cell(0, 10, f"Income: INR {income:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Predicted Savings: INR {predicted_savings:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Goal: {goal}", ln=True)
+    pdf.cell(0, 10, f"Risk Tolerance: {risk_tolerance}", ln=True)
+    pdf.cell(0, 10, f"Investment Horizon: {horizon_years} years", ln=True)
     pdf.ln(10)
-
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Investment Recommendations", ln=True)
     pdf.set_font("Arial", "", 10)
     for category, recs in recommendations.items():
         if recs:
-            pdf.cell(0, 10, clean_text(f"{category}:"), ln=True)
+            pdf.cell(0, 10, f"{category}:", ln=True)
             for rec in recs:
-                pdf.cell(0, 10, clean_text(f"  - {rec['Company']}: INR {rec['Amount']:,.2f}"), ln=True)
+                pdf.cell(0, 10, f"  - {rec['Company']}: INR {rec['Amount']:,.2f}", ln=True)
     pdf.ln(10)
-
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Budget Tips", ln=True)
     pdf.set_font("Arial", "", 10)
     for tip in tips:
-        pdf.cell(0, 10, clean_text(f"- {tip}"), ln=True)
+        pdf.cell(0, 10, f"- {tip}", ln=True)
     pdf.ln(10)
-
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Peer Comparison", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 10, clean_text(f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}"), ln=True)
-
+    pdf.cell(0, 10, f"Your Savings: INR {predicted_savings:,.2f} | Peer Average: INR {peer_savings:,.2f}", ln=True)
     buffer = io.BytesIO()
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        pdf.output(tmp_file.name)
-        tmp_file.close()
-        with open(tmp_file.name, 'rb') as f:
-            buffer.write(f.read())
-        os.unlink(tmp_file.name)
+    pdf.output(buffer)
     buffer.seek(0)
     return buffer
 
@@ -307,44 +286,74 @@ def get_market_news(api_key, tickers="AAPL"):
     except Exception as e:
         return None, f"Error fetching news: {str(e)}"
 
-# Comic Panel Loading Function
-def load_comic_panel(scene="default"):
-    comic_folder = "comics"
-    scene_map = {
-        "juggling": "priya_juggling.png",
-        "chart": "priya_chart.png",
-        "house": "priya_house.png",
-        "hammock": "priya_hammock.png",
-        "news": "priya_news.png",
-        "default": "priya_default.png"
-    }
-    filename = scene_map.get(scene, scene_map["default"])
-    filepath = os.path.join(comic_folder, filename)
-    
-    if not os.path.exists(filepath):
-        st.warning(f"Comic image '{filename}' not found in '{comic_folder}'. Using placeholder.")
-        # Return a simple placeholder text as bytes
-        buffer = io.BytesIO()
-        buffer.write(b"Placeholder Comic: Priya in " + scene.encode())
-        buffer.seek(0)
-        return buffer
-    
-    with open(filepath, "rb") as f:
-        buffer = io.BytesIO(f.read())
-    buffer.seek(0)
-    return buffer
+# Chatbot Class
+class Chatbot:
+    def __init__(self):
+        self.tours = {
+            "📈 Stock Investments": """
+                Welcome to the **Stock Investments** tab! 🌟 Here, you can explore the NIFTY CONSUMPTION index and plan your stock market journey.  
+                - **What to Do**: Enter your investment amount, horizon, risk appetite, and goals.  
+                - **Features**: See predicted prices, growth potential, and a cool trend chart!  
+                - **Try This**: Set a ₹6000 investment for 12 months with 'Medium' risk and 'Wealth growth' goal, then hit 'Explore Market'.  
+                Ready to dive in? Click below to start!
+            """,
+            "🎯 Personalized Investment": """
+                Hey there! This is your **Personalized Investment** tab! 🌈 It’s all about crafting a plan just for YOU.  
+                - **What to Do**: Fill in your income, expenses, goals, and risk tolerance.  
+                - **Features**: Get a savings breakdown pie chart, investment options, and a timeline to your goal!  
+                - **Try This**: Input ₹50,000 income, ₹20,000 essentials, and a ₹1,00,000 goal over 3 years.  
+                Want to see your plan? Hit 'Get Your Plan' after the tour!
+            """,
+            "🏡 Retirement Planning": """
+                Planning for your golden years? Welcome to **Retirement Planning**! 🌞  
+                - **What to Do**: Enter your age, income, savings, and retirement expenses.  
+                - **Features**: Visualize your wealth growth vs. inflation-adjusted goals, plus tips!  
+                - **Try This**: Set age 30, ₹50,000 income, ₹20,000 expenses, retiring at 65.  
+                Ready to secure your future? Click 'Plan My Retirement' when we’re done!
+            """,
+            "🌐 Live Market Insights": """
+                Time to go live with **Live Market Insights**! 🌍  
+                - **What to Do**: Add your Alpha Vantage API key and stock symbols (like AAPL, TSLA).  
+                - **Features**: Real-time stock prices, charts, and market news headlines!  
+                - **Try This**: Paste your API key and track 'AAPL' and 'TSLA'.  
+                Need a key? Check the sidebar for how to get one—it’s free!
+            """
+        }
+        self.responses = {
+            "hi": "Hello! I’m your Artha guide. How can I assist you today? 😊",
+            "what can you do": "I’m here to give you a tour of Artha, answer questions, and help you navigate! Try asking about a tab or say 'start tour'!",
+            "start tour": "Awesome! Let’s explore Artha together. Which tab would you like to start with? Pick one below!",
+            "thanks": "You’re welcome! Anything else I can help with? 😊",
+            "bye": "See you later! Enjoy mastering your finances with Artha! 👋"
+        }
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = ["👋 Hi! I’m your Artha Chatbot. Say 'start tour' to explore the dashboard or ask me anything!"]
+
+    def get_response(self, user_input):
+        user_input = user_input.lower().strip()
+        if user_input in self.responses:
+            return self.responses[user_input]
+        elif "tab" in user_input:
+            for tab_name in self.tours:
+                if tab_name.lower() in user_input:
+                    return self.tours[tab_name]
+            return "Which tab do you want to know about? I can explain 📈 Stock Investments, 🎯 Personalized Investment, 🏡 Retirement Planning, or 🌐 Live Market Insights!"
+        elif "how" in user_input:
+            return "I can guide you step-by-step! Tell me what you want to do—like 'how to plan retirement' or 'how to track stocks'!"
+        else:
+            return "Hmm, I’m not sure about that. Try asking about a tab (e.g., 'tell me about Stock Investments') or say 'start tour'!"
+
+    def display_tour_buttons(self):
+        st.write("Pick a tab to tour:")
+        for tab_name in self.tours:
+            if st.button(tab_name, key=f"tour_{tab_name}"):
+                st.session_state.chat_history.append(f"**You**: Let’s tour {tab_name}")
+                st.session_state.chat_history.append(f"**Chatbot**: {self.tours[tab_name]}")
 
 # Main Application
 def main():
-    # Intro
     st.title("💰 Artha")
     st.markdown("Your ultimate wealth management companion! 🚀")
-    with st.expander("Meet Priya the Planner!"):
-        comic_buffer = load_comic_panel("juggling")
-        st.image(comic_buffer, caption="Priya the Planner", use_column_width=True)
-        st.write("Meet Priya! She’s here to show you how Artha works.")
-        if st.button("Reload Priya’s Intro Comic"):
-            st.image(comic_buffer, caption="Priya’s Journey", use_column_width=True)
 
     # Load data
     stock_data = load_stock_data()
@@ -363,7 +372,7 @@ def main():
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
 
-    # Sidebar
+    # Sidebar with Chatbot and API Key
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
@@ -375,72 +384,33 @@ def main():
             st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
         
         st.markdown("### 🔑 Your Market Data Pass")
-        st.write("To see live stock prices and news, we need a 'key'!")
         api_key = st.text_input("Paste Your Key Here", value="", type="password", 
-                               help="This is a special code from Alpha Vantage!")
-        st.markdown("""
-        **How to Get It:**  
-        1. Visit [Alpha Vantage](https://www.alphavantage.co/).  
-        2. Click 'Get Free API Key' and sign up.  
-        3. Copy the code and paste it here!
-        """)
+                               help="Get a free key from [Alpha Vantage](https://www.alphavantage.co/).")
+        
+        st.markdown("---")
+        st.subheader("💬 Chat with Your Artha Guide")
+        chatbot = Chatbot()
+        for message in st.session_state.chat_history:
+            st.write(message)
+        user_input = st.text_input("Ask me anything!", key="chat_input")
+        if st.button("Send", key="chat_send"):
+            if user_input:
+                st.session_state.chat_history.append(f"**You**: {user_input}")
+                response = chatbot.get_response(user_input)
+                st.session_state.chat_history.append(f"**Chatbot**: {response}")
+                if user_input.lower() == "start tour":
+                    chatbot.display_tour_buttons()
+                st.experimental_rerun()
 
     # Tabs
-    tab0, tab1, tab2, tab3, tab4 = st.tabs(["📖 Tutorial", "📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
-
-    with tab0:
-        st.header("📖 Priya’s Guide to Artha")
-        st.markdown("Hey there! I’m Priya the Planner, and I’m here to take you on a fun financial adventure with Artha! 🌟 Let’s explore how to grow your money, step by step!")
-        
-        with st.expander("Step 1: What’s Artha All About?"):
-            comic_buffer = load_comic_panel("juggling")
-            st.image(comic_buffer, caption="Priya’s Treasure Map", use_column_width=True)
-            st.write("Artha is like a treasure map for your money! It helps you save, invest, and plan for big dreams—like a cool vacation or a comfy retirement. Ready to dive in?")
-            st.success("Tip: Think of Artha as your money’s best friend!")
-            if st.button("Reload Step 1 Comic"):
-                st.image(comic_buffer, caption="Priya’s Adventure", use_column_width=True)
-
-        with st.expander("Step 2: Play the Stock Market Game"):
-            comic_buffer = load_comic_panel("chart")
-            st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
-            st.write("In the 'Stock Investments' tab, you pick how much money to put in and how risky you wanna get—like choosing a rollercoaster ride! Artha shows you what might happen.")
-            st.info("Fun Fact: Priya loves medium-risk rides—safe but exciting!")
-            if st.button("Reload Step 2 Comic"):
-                st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
-
-        with st.expander("Step 3: Build Your Dream Plan"):
-            comic_buffer = load_comic_panel("house")
-            st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
-            st.write("Here, in 'Personalized Investment,' you tell Artha your income and dreams—like buying a house. Fill in the boxes, set a goal, and download a plan just for you!")
-            st.success("Priya’s Dream: A cozy house by the beach!")
-            if st.button("Reload Step 3 Comic"):
-                st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
-
-        with st.expander("Step 4: Plan Your Chill Years"):
-            comic_buffer = load_comic_panel("hammock")
-            st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
-            st.write("In 'Retirement Planning,' you decide when to kick back and relax. Tell Artha your age and expenses—it’ll show if you’re ready for the hammock life!")
-            st.warning("Priya says: Save early, chill later!")
-            if st.button("Reload Step 4 Comic"):
-                st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
-
-        with st.expander("Step 5: Be a Market Wizard"):
-            comic_buffer = load_comic_panel("news")
-            st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
-            st.write("In 'Live Market Insights,' you need a special key (from Alpha Vantage) to see live stock prices and news—like magic! Paste it in the sidebar and track your favorites.")
-            st.info("Priya’s Favorite: Watching Apple stocks soar!")
-            if st.button("Reload Step 5 Comic"):
-                st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
     with tab1:
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate the NIFTY CONSUMPTION index with precision! 🌟")
-        with st.expander("See How Priya Did It!"):
-            comic_buffer = load_comic_panel("chart")
-            st.image(comic_buffer, caption="Priya’s Stock Journey", use_column_width=True)
-            st.write("Priya explores stocks to grow her savings!")
-            if st.button("Reload Stock Comic"):
-                st.image(comic_buffer, caption="Priya’s Stock Adventure", use_column_width=True)
+        if st.button("Chatbot: Explain This Tab", key="tab1_help"):
+            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['📈 Stock Investments']}")
+            st.experimental_rerun()
         
         with st.form(key="stock_form"):
             col1, col2 = st.columns(2)
@@ -449,11 +419,7 @@ def main():
                 invest_amount = st.number_input("💰 Amount to Invest (₹)", min_value=1000.0, value=6000.0, step=500.0)
             with col2:
                 risk_tolerance = st.selectbox("🎲 Risk Appetite", ["Low", "Medium", "High"])
-                goals = st.multiselect(
-                    "🎯 Goals",
-                    ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
-                    default=["Wealth growth"]
-                )
+                goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
             submit = st.form_submit_button("🚀 Explore Market")
         
         if submit and stock_data is not None and stock_model is not None:
@@ -469,34 +435,21 @@ def main():
             col1.metric("Predicted Price (₹)", f"₹{predicted_price:,.2f}", f"{growth:,.2f}")
             col2.metric("Growth Potential", f"{(growth/current_price)*100:.1f}%", "🚀" if growth > 0 else "📉")
             with st.expander("📊 Price Trend", expanded=True):
-                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend", 
-                             hover_data=['open', 'high', 'low', 'volume'])
-                fig.update_traces(line_color='#00ff00')
+                fig = px.line(stock_data, x='Date', y='close', title="NIFTY CONSUMPTION Trend")
                 st.plotly_chart(fig, use_container_width=True)
             st.subheader("💡 Your Investment Strategy")
-            st.write(f"Goals Selected: {', '.join(goals)}")
-            progress = min(1.0, invest_amount / 100000)
-            st.progress(progress)
-            any_recommendations = False
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
+            for category, recs in recommendations.items():
                 if recs:
-                    any_recommendations = True
                     with st.expander(f"{category} Options"):
                         for rec in recs:
                             st.write(f"- **{rec['Company']}**: Invest ₹{rec['Amount']:,.2f}")
-            if not any_recommendations:
-                st.info("No options match your criteria. Try adjusting inputs.")
 
     with tab2:
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan for wealth growth! 🌈")
-        with st.expander("See How Priya Did It!"):
-            comic_buffer = load_comic_panel("house")
-            st.image(comic_buffer, caption="Priya’s House Plan", use_column_width=True)
-            st.write("Priya builds a personalized plan for her dream house!")
-            if st.button("Reload Investment Comic"):
-                st.image(comic_buffer, caption="Priya’s Dream Plan", use_column_width=True)
+        if st.button("Chatbot: Explain This Tab", key="tab2_help"):
+            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🎯 Personalized Investment']}")
+            st.experimental_rerun()
         
         with st.form(key="investment_form"):
             col1, col2 = st.columns(2)
@@ -507,11 +460,7 @@ def main():
                 non_essentials = st.number_input("🎉 Non-Essentials (₹)", min_value=0.0, step=100.0)
                 debt_payment = st.number_input("💳 Debt Payment (₹)", min_value=0.0, step=100.0)
             with col2:
-                goals = st.multiselect(
-                    "🎯 Goals",
-                    ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"],
-                    default=["Wealth growth"]
-                )
+                goals = st.multiselect("🎯 Goals", ["Wealth growth", "Emergency fund", "Future expenses", "No specific goal"], default=["Wealth growth"])
                 goal_amount = st.number_input("💎 Total Goal Amount (₹)", min_value=0.0, step=1000.0, value=50000.0)
                 risk_tolerance = st.selectbox("🎲 Risk Tolerance", ["Low", "Medium", "High"])
                 horizon_years = st.slider("⏳ Horizon (Years)", 1, 10, 3)
@@ -523,81 +472,28 @@ def main():
                 predicted_savings = predict_savings(survey_model, income, essentials, non_essentials, debt_payment)
                 invest_amount = predicted_savings * (invest_percent / 100)
                 recommendations = predict_investment_strategy(investment_model, invest_amount, risk_tolerance, horizon_years, goals)
-                monthly_savings_needed = calculate_savings_goal(goal_amount, horizon_years)
                 peer_avg_savings = survey_data["Savings"].mean()
-
+                tips = ["Save more by cutting non-essentials if possible!"]
             st.subheader("💰 Your Monthly Breakdown")
-            breakdown_data = {
-                "Essentials": essentials,
-                "Non-Essentials": non_essentials,
-                "Debt Payment": debt_payment,
-                "Savings": predicted_savings
-            }
-            fig = px.pie(values=list(breakdown_data.values()), names=list(breakdown_data.keys()), title="Spending vs. Savings")
+            fig = px.pie(values=[essentials, non_essentials, debt_payment, predicted_savings], 
+                         names=["Essentials", "Non-Essentials", "Debt Payment", "Savings"])
             st.plotly_chart(fig, use_container_width=True)
-
             st.subheader("💼 Your Investment Options")
-            st.write(f"Goals Selected: {', '.join(goals)}")
-            st.write(f"Amount to Invest: ₹{invest_amount:,.2f} ({invest_percent}% of ₹{predicted_savings:,.2f})")
-            for category in ["Large Cap", "Medium Cap", "Low Cap", "Crypto"]:
-                recs = recommendations.get(category, [])
+            for category, recs in recommendations.items():
                 if recs:
                     with st.expander(f"{category} Investments"):
                         for rec in recs:
                             st.write(f"- *{rec['Company']}*: ₹{rec['Amount']:,.2f}")
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("🎯 Savings Progress")
-                progress = min(1.0, predicted_savings / goal_amount) if goal_amount > 0 else 0
-                st.progress(progress)
-                st.write(f"₹{predicted_savings:,.2f} / ₹{goal_amount:,.2f}")
-            with col2:
-                st.subheader("📊 Peer Benchmark")
-                st.bar_chart({"You": predicted_savings, "Peers": peer_avg_savings})
-
-            st.subheader("⏰ Time to Goal")
-            months_to_goal = goal_amount / predicted_savings if predicted_savings > 0 else float('inf')
-            years_to_goal = months_to_goal / 12
-            timeline_data = pd.DataFrame({
-                "Years": range(horizon_years + 1),
-                "Savings": [predicted_savings * 12 * y for y in range(horizon_years + 1)]
-            })
-            fig = px.line(timeline_data, x="Years", y="Savings", title=f"Projected Savings to Reach ₹{goal_amount:,.2f}")
-            fig.add_hline(y=goal_amount, line_dash="dash", line_color="red", annotation_text="Goal")
-            st.plotly_chart(fig, use_container_width=True)
-            st.write(f"Estimated Time to Goal: {years_to_goal:.1f} years")
-
-            with st.expander("💡 Personalized Budget Tips", expanded=True):
-                tips = []
-                median_non_essentials = survey_data["Non_Essentials"].median()
-                if non_essentials > median_non_essentials:
-                    tips.append(f"Reduce non-essentials by ₹{non_essentials - median_non_essentials:,.2f}.")
-                if debt_payment > income * 0.3:
-                    tips.append("Debt payment exceeds 30% of income - consider refinancing.")
-                if predicted_savings < monthly_savings_needed:
-                    shortfall = monthly_savings_needed - predicted_savings
-                    tips.append(f"Boost savings by ₹{shortfall:,.2f}/month.")
-                else:
-                    tips.append("Great job! Your savings exceed your goal.")
-                if "Wealth growth" in goals and risk_tolerance == "Low":
-                    tips.append("Consider medium-risk options for better returns.")
-                for tip in tips:
-                    st.write(f"- {tip}")
-
             pdf_buffer = generate_pdf(name, income, predicted_savings, ", ".join(goals), risk_tolerance, horizon_years, recommendations, peer_avg_savings, tips)
             st.download_button("📥 Download Your Plan", pdf_buffer, f"{name}_investment_plan.pdf", "application/pdf")
 
     with tab3:
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years with smart savings! 🌞")
-        with st.expander("See How Priya Did It!"):
-            comic_buffer = load_comic_panel("hammock")
-            st.image(comic_buffer, caption="Priya’s Retirement", use_column_width=True)
-            st.write("Priya plans her retirement paradise!")
-            if st.button("Reload Retirement Comic"):
-                st.image(comic_buffer, caption="Priya’s Chill Years", use_column_width=True)
-    
+        if st.button("Chatbot: Explain This Tab", key="tab3_help"):
+            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🏡 Retirement Planning']}")
+            st.experimental_rerun()
+        
         with st.form(key="retirement_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -608,129 +504,36 @@ def main():
                 retirement_age = st.slider("👴 Retirement Age", age + 1, 100, 65)
                 monthly_expenses = st.number_input("💸 Expected Monthly Expenses (₹)", min_value=0.0, step=500.0)
                 inflation_rate = st.slider("📈 Expected Inflation Rate (%)", 0.0, 10.0, 3.0)
-        
-            st.subheader("Additional Income Sources in Retirement")
-            income_sources = st.multiselect(
-                "Select Sources", 
-                ["Pension", "Rental Income", "Part-Time Work", "Other"]
-            )
-            additional_income = 0
-            for source in income_sources:
-                amount = st.number_input(f"Monthly {source} (₹)", min_value=0.0, step=500.0, key=source)
-                additional_income += amount
-        
             submit = st.form_submit_button("🚀 Plan My Retirement")
-    
-        if submit and financial_data is not None and retirement_model is not None:
-            with st.spinner("Projecting your retirement..."):
-                years_to_retirement = retirement_age - age
-                if years_to_retirement <= 0:
-                    st.error("🚨 Retirement age must be greater than current age!")
-                else:
-                    future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement if monthly_expenses > 0 else 0
-                    retirement_goal = future_expenses * 12 * 20
-                    annual_additional_income = additional_income * 12
-                    retirement_goal -= annual_additional_income * 20
-                    retirement_goal = max(0, retirement_goal)
-                    predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
-                    retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
         
-                    st.subheader("🌟 Retirement Outlook")
-                    col1, col2 = st.columns(2)
-                    col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
-                    col2.metric(
-                        "Inflation-Adjusted Goal (After Income)",
-                        f"₹{retirement_goal:,.2f}",
-                        f"{'Surplus' if retirement_wealth > retirement_goal else 'Shortfall'}: ₹{abs(retirement_wealth - retirement_goal):,.2f}"
-                    )
-                
-                    st.subheader("📈 Savings Trajectory")
-                    trajectory = [forecast_retirement_savings(income, predicted_savings + current_savings, y) for y in range(years_to_retirement + 1)]
-                    adjusted_goals = [max(0, future_expenses * 12 * min(y, 20) - (annual_additional_income * min(y, 20))) for y in range(years_to_retirement + 1)]
-                    adjusted_goals = [float(x) if isinstance(x, (int, float)) and not (np.isnan(x) or np.isinf(x)) else 0 for x in adjusted_goals]
-                    x_values = list(range(years_to_retirement + 1))
-                    if len(x_values) == len(trajectory) and len(x_values) == len(adjusted_goals):
-                        fig = px.line(
-                            x=x_values, 
-                            y=trajectory, 
-                            labels={"x": "Years", "y": "Wealth (₹)"}, 
-                            title="Retirement Growth vs Goal"
-                        )
-                        fig.add_scatter(x=x_values, y=adjusted_goals, mode='lines', name="Adjusted Goal", line=dict(dash="dash", color="red"))
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                    st.subheader("💡 Retirement Tips")
-                    if retirement_wealth < retirement_goal:
-                        shortfall = (retirement_goal - retirement_wealth) / (years_to_retirement * 12)
-                        st.write(f"- Increase monthly savings by ₹{shortfall:,.2f}.")
-                    if additional_income > 0:
-                        st.write(f"- Additional income of ₹{additional_income:,.2f}/month helps!")
-                    st.write(f"- Inflation at {inflation_rate}% increases expenses to ₹{future_expenses:,.2f}/month.")
+        if submit and financial_data is not None and retirement_model is not None:
+            years_to_retirement = retirement_age - age
+            future_expenses = monthly_expenses * (1 + inflation_rate / 100) ** years_to_retirement
+            retirement_goal = future_expenses * 12 * 20
+            predicted_savings = predict_retirement_savings(retirement_model, income, monthly_expenses)
+            retirement_wealth = forecast_retirement_savings(income, predicted_savings + current_savings, years_to_retirement)
+            st.subheader("🌟 Retirement Outlook")
+            col1, col2 = st.columns(2)
+            col1.metric("Projected Wealth", f"₹{retirement_wealth:,.2f}")
+            col2.metric("Goal", f"₹{retirement_goal:,.2f}")
 
     with tab4:
         st.header("🌐 Live Market Insights")
         st.markdown("Track your portfolio and stay updated with market news!")
-        with st.expander("See How Priya Did It!"):
-            comic_buffer = load_comic_panel("news")
-            st.image(comic_buffer, caption="Priya’s Market Insight", use_column_width=True)
-            st.write("Priya tracks the market live to stay ahead!")
-            if st.button("Reload Market Comic"):
-                st.image(comic_buffer, caption="Priya’s Market Wizardry", use_column_width=True)
-
-        with st.expander("How to Use This?"):
-            st.write("""
-            1. **Add Your Key**: Paste your Alpha Vantage key in the sidebar.
-            2. **Pick Stocks**: Edit the list below (e.g., AAPL, MSFT).
-            3. **Track & Read**: Click 'Track Portfolio & News'!
-            """)
-            st.info("No key? Follow the sidebar steps!")
-
+        if st.button("Chatbot: Explain This Tab", key="tab4_help"):
+            st.session_state.chat_history.append(f"**Chatbot**: {chatbot.tours['🌐 Live Market Insights']}")
+            st.experimental_rerun()
+        
         if not api_key:
-            st.error("Oops! Please add your Alpha Vantage key in the sidebar.")
+            st.error("Please add your Alpha Vantage key in the sidebar!")
         else:
-            st.subheader("Live Portfolio Tracking")
-            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT\nGOOGL\nTSLA")
+            portfolio_input = st.text_area("Enter stock symbols (one per line):", "AAPL\nMSFT")
             portfolio = [symbol.strip().upper() for symbol in portfolio_input.split("\n") if symbol.strip()]
-            
             if st.button("Track Portfolio & News"):
-                total_value = 0
                 for symbol in portfolio:
-                    with st.spinner(f"Fetching live data for {symbol}..."):
-                        df, error = get_stock_data(symbol, api_key)
-                        if error or df is None:
-                            st.error(f"{symbol}: {error}")
-                            continue
-                        latest_price = df["Close"].iloc[0]
-                        previous_price = df["Close"].iloc[-1]
-                        performance = ((latest_price - previous_price) / previous_price) * 100
-                        total_value += latest_price
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric(
-                                label=f"{symbol} Current Price",
-                                value=f"${latest_price:.2f}",
-                                delta=f"{performance:.2f}%"
-                            )
-                        with col2:
-                            fig = go.Figure()
-                            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], mode="lines", name=f"{symbol} Price"))
-                            fig.update_layout(title=f"{symbol} Live Price", xaxis_title="Time", yaxis_title="Price (USD)")
-                            st.plotly_chart(fig, use_container_width=True)
-                
-                st.success(f"Total Portfolio Value: ${total_value:.2f}")
-
-                st.subheader("Latest Market News")
-                ticker_for_news = portfolio[0] if portfolio else "AAPL"
-                with st.spinner(f"Fetching news for {ticker_for_news}..."):
-                    news_feed, error = get_market_news(api_key, ticker_for_news)
-                    if error or news_feed is None:
-                        st.warning(error)
-                    else:
-                        for article in news_feed[:5]:
-                            st.write(f"**{article['title']}**")
-                            st.write(article["summary"])
-                            st.write(f"[Read more]({article['url']})")
+                    df, error = get_stock_data(symbol, api_key)
+                    if df is not None:
+                        st.write(f"{symbol} Latest Price: ${df['Close'].iloc[0]:.2f}")
 
     st.markdown("---")
     st.write("Powered by WealthWise | Built with love by xAI")
