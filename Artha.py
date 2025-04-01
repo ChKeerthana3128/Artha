@@ -340,31 +340,31 @@ def main():
     tab1, tab2, tab3, tab4 = st.tabs(["📈 Stock Investments", "🎯 Personalized Investment", "🏡 Retirement Planning", "🌐 Live Market Insights"])
 
     with tab1:
-    with st.expander("📚 Tutorial: Ride the Stock Market Wave!"):
-        slide = st.slider("Move through the tutorial", 1, 6, 1, label_visibility="hidden")
-        progress = st.progress(slide / 6)
-        if slide == 1:
-            st.image("https://via.placeholder.com/150", caption="Ready to ride the stock market wave? Let’s set you up!")
-        elif slide == 2:
-            st.slider("Horizon (Months)", 1, 60, 12, disabled=True)
-            st.write("Pick how long you’ll invest—longer horizons can mean bigger waves!")
-        elif slide == 3:
-            st.number_input("Amount (₹)", 1000.0, 10000.0, 6000.0, disabled=True)
-            st.write("How much to invest? Start small or go big!")
-        elif slide == 4:
-            col1, col2, col3 = st.columns(3)
-            col1.button("Low", disabled=True, help="Safe")
-            col2.button("Medium", disabled=True, help="Balanced")
-            col3.button("High", disabled=True, help="Bold")
-            st.write("Choose your vibe: Safe, Balanced, or Bold!")
-        elif slide == 5:
-            st.checkbox("Wealth growth", value=True, disabled=True)
-            st.checkbox("Emergency fund", disabled=True)
-            st.write("What’s your dream? Check one or more!")
-        elif slide == 6:
-            if st.button("Try It!"):
-                st.write("Filling form with sample data...")
-            st.write("Hit 'Explore Market' to see your future!")
+        with st.expander("📚 Tutorial: Ride the Stock Market Wave!"):
+            slide = st.slider("Move through the tutorial", 1, 6, 1, label_visibility="hidden")
+            progress = st.progress(slide / 6)
+            if slide == 1:
+                st.image("https://via.placeholder.com/150", caption="Ready to ride the stock market wave? Let’s set you up!")
+            elif slide == 2:
+                st.slider("Horizon (Months)", 1, 60, 12, disabled=True)
+                st.write("Pick how long you’ll invest—longer horizons can mean bigger waves!")
+            elif slide == 3:
+                st.number_input("Amount (₹)", 1000.0, 10000.0, 6000.0, disabled=True)
+                st.write("How much to invest? Start small or go big!")
+            elif slide == 4:
+                col1, col2, col3 = st.columns(3)
+                col1.button("Low", disabled=True, help="Safe")
+                col2.button("Medium", disabled=True, help="Balanced")
+                col3.button("High", disabled=True, help="Bold")
+                st.write("Choose your vibe: Safe, Balanced, or Bold!")
+            elif slide == 5:
+                st.checkbox("Wealth growth", value=True, disabled=True)
+                st.checkbox("Emergency fund", disabled=True)
+                st.write("What’s your dream? Check one or more!")
+            elif slide == 6:
+                if st.button("Try It!"):
+                    st.write("Filling form with sample data...")
+                st.write("Hit 'Explore Market' to see your future!")
         st.header("📈 Stock Market Adventure")
         st.markdown("Navigate NIFTY CONSUMPTION with precision! 🌟")
 
@@ -447,33 +447,33 @@ def main():
                 st.info("No matches. Adjust inputs!")
 
     with tab2:
-    with st.expander("📚 Tutorial: Chat with WealthWise Bot!"):
-        chat_step = st.selectbox("Chat with me!", [1, 2, 3, 4, 5, 6, 7], format_func=lambda x: f"Message {x}")
-        if chat_step == 1:
-            st.write("🤖 Hi there! I’m WealthWise Bot. What’s your name?")
-            st.text_input("Name", "Aarav", disabled=True)
-        elif chat_step == 2:
-            st.write("🤖 Great, Aarav! How much do you earn monthly?")
-            st.number_input("Income (₹)", value=50000.0, disabled=True)
-        elif chat_step == 3:
-            st.write("🤖 Cool! What do you spend on essentials like food?")
-            st.number_input("Essentials (₹)", value=20000.0, disabled=True)
-            fig = px.pie(names=["Essentials", "Rest"], values=[20000, 30000])
-            st.plotly_chart(fig, use_container_width=True)
-        elif chat_step == 4:
-            st.write("🤖 Any fun spending—like movies or coffee?")
-            st.number_input("Non-Essentials (₹)", value=5000.0, disabled=True)
-        elif chat_step == 5:
-            st.write("🤖 Got goals? Pick one or more!")
-            st.multiselect("Goals", ["Wealth growth", "Emergency fund"], ["Wealth growth"], disabled=True)
-        elif chat_step == 6:
-            st.write("🤖 Last step—risk level and years?")
-            st.selectbox("Risk", ["Low", "Medium", "High"], index=1, disabled=True)
-            st.slider("Years", 1, 10, 3, disabled=True)
-        elif chat_step == 7:
-            st.write("🤖 Awesome! Click 'Get Your Plan' to see my magic!")
-            if st.button("Test the Bot"):
-                st.write("Generating a sample plan...")
+        with st.expander("📚 Tutorial: Chat with WealthWise Bot!"):
+            chat_step = st.selectbox("Chat with me!", [1, 2, 3, 4, 5, 6, 7], format_func=lambda x: f"Message {x}")
+            if chat_step == 1:
+                st.write("🤖 Hi there! I’m WealthWise Bot. What’s your name?")
+                st.text_input("Name", "Aarav", disabled=True)
+            elif chat_step == 2:
+                st.write("🤖 Great, Aarav! How much do you earn monthly?")
+                st.number_input("Income (₹)", value=50000.0, disabled=True)
+            elif chat_step == 3:
+                st.write("🤖 Cool! What do you spend on essentials like food?")
+                st.number_input("Essentials (₹)", value=20000.0, disabled=True)
+                fig = px.pie(names=["Essentials", "Rest"], values=[20000, 30000])
+                st.plotly_chart(fig, use_container_width=True)
+            elif chat_step == 4:
+                st.write("🤖 Any fun spending—like movies or coffee?")
+                st.number_input("Non-Essentials (₹)", value=5000.0, disabled=True)
+            elif chat_step == 5:
+                st.write("🤖 Got goals? Pick one or more!")
+                st.multiselect("Goals", ["Wealth growth", "Emergency fund"], ["Wealth growth"], disabled=True)
+            elif chat_step == 6:
+                st.write("🤖 Last step—risk level and years?")
+                st.selectbox("Risk", ["Low", "Medium", "High"], index=1, disabled=True)
+                st.slider("Years", 1, 10, 3, disabled=True)
+            elif chat_step == 7:
+                st.write("🤖 Awesome! Click 'Get Your Plan' to see my magic!")
+                if st.button("Test the Bot"):
+                    st.write("Generating a sample plan...")
 
         st.header("🎯 Your Investment Journey")
         st.markdown("Craft a personalized plan! 🌈")
@@ -590,27 +590,27 @@ def main():
             st.download_button("📥 Download Plan", pdf_buffer, f"{name}_plan.pdf", "application/pdf")
 
     with tab3:
-    with st.expander("📚 Tutorial: Your Retirement Timeline"):
-        st.write("Click or hover on each milestone!")
-        timeline = st.slider("Explore the Timeline", 1, 7, 1, label_visibility="hidden")
-        if timeline == 1:
-            st.write("🎂 **Current Age**: Enter your age (e.g., 30)—where you are now!")
-        elif timeline == 2:
-            st.write("💰 **Income & Savings**: Add your monthly income (₹40,000) and savings (₹50,000).")
-        elif timeline == 3:
-            st.write("👴 **Retirement Age**: Pick when you’ll retire (e.g., 65)—your finish line!")
-        elif timeline == 4:
-            st.write("💸 **Expenses**: Estimate monthly costs in retirement (₹25,000).")
-        elif timeline == 5:
-            st.write("📈 **Inflation**: Set inflation (e.g., 3%)—prices rise over time!")
-            fig = px.line(x=[0, 35], y=[25000, 25000 * (1.03**35)], title="Expenses with 3% Inflation")
-            st.plotly_chart(fig)
-        elif timeline == 6:
-            st.write("🏠 **Extra Income**: Add pensions or rent (e.g., ₹10,000) to ease the load.")
-        elif timeline == 7:
-            st.write("🚀 **Plan**: Hit 'Plan My Retirement' to see your future!")
-            if st.button("See a Sample Timeline"):
-                st.write("Sample: Age 30 to 65, Income ₹40,000, Expenses ₹25,000...")
+        with st.expander("📚 Tutorial: Your Retirement Timeline"):
+            st.write("Click or hover on each milestone!")
+            timeline = st.slider("Explore the Timeline", 1, 7, 1, label_visibility="hidden")
+            if timeline == 1:
+                st.write("🎂 **Current Age**: Enter your age (e.g., 30)—where you are now!")
+            elif timeline == 2:
+                st.write("💰 **Income & Savings**: Add your monthly income (₹40,000) and savings (₹50,000).")
+            elif timeline == 3:
+                st.write("👴 **Retirement Age**: Pick when you’ll retire (e.g., 65)—your finish line!")
+            elif timeline == 4:
+                st.write("💸 **Expenses**: Estimate monthly costs in retirement (₹25,000).")
+            elif timeline == 5:
+                st.write("📈 **Inflation**: Set inflation (e.g., 3%)—prices rise over time!")
+                fig = px.line(x=[0, 35], y=[25000, 25000 * (1.03**35)], title="Expenses with 3% Inflation")
+                st.plotly_chart(fig)
+            elif timeline == 6:
+                st.write("🏠 **Extra Income**: Add pensions or rent (e.g., ₹10,000) to ease the load.")
+            elif timeline == 7:
+                st.write("🚀 **Plan**: Hit 'Plan My Retirement' to see your future!")
+                if st.button("See a Sample Timeline"):
+                    st.write("Sample: Age 30 to 65, Income ₹40,000, Expenses ₹25,000...")
         st.header("🏡 Retirement Planning")
         st.markdown("Secure your golden years! 🌞")
 
@@ -702,22 +702,23 @@ def main():
                     if additional_income > 0:
                         st.write(f"- Extra ₹{additional_income:,.2f}/month helps!")
                     st.write(f"- Inflation: ₹{future_expenses:,.2f}/month")
+
     with tab4:
-    with st.expander("📚 Tutorial: Mini Market Dashboard"):
-        st.write("Here’s how it works!")
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.write("🔑 **Your Key**")
-            st.text_input("Paste your key here!", "DEMO_KEY", disabled=True)
-            st.write("Get it free at alphavantage.co!")
-        with col2:
-            st.write("📋 **Your Stocks**")
-            st.text_area("Type stocks here!", "AAPL\nTSLA", disabled=True)
-            if st.button("Simulate Tracking"):
-                fig = px.line(x=[1, 2, 3], y=[150, 152, 151], title="AAPL Dummy Price")
-                st.plotly_chart(fig)
-                st.write("📰 **News**: Apple launches new gadget!")
-        st.write("🚀 Click 'Track Portfolio & News' to go live!")
+        with st.expander("📚 Tutorial: Mini Market Dashboard"):
+            st.write("Here’s how it works!")
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.write("🔑 **Your Key**")
+                st.text_input("Paste your key here!", "DEMO_KEY", disabled=True)
+                st.write("Get it free at alphavantage.co!")
+            with col2:
+                st.write("📋 **Your Stocks**")
+                st.text_area("Type stocks here!", "AAPL\nTSLA", disabled=True)
+                if st.button("Simulate Tracking"):
+                    fig = px.line(x=[1, 2, 3], y=[150, 152, 151], title="AAPL Dummy Price")
+                    st.plotly_chart(fig)
+                    st.write("📰 **News**: Apple launches new gadget!")
+            st.write("🚀 Click 'Track Portfolio & News' to go live!")
         st.header("🌐 Live Market Insights")
         st.markdown("Track portfolio and news live!")
 
