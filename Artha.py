@@ -335,6 +335,17 @@ def main():
     with st.sidebar:
         st.header("Dashboard Insights")
         st.info("Explore your financial future with these tools!")
+        if stock_data is not None:
+            st.metric("Stock Model Accuracy (R²)", f"{stock_r2:.2f}")
+        if survey_data is not None:
+            st.metric("Savings Model Accuracy (R²)", f"{survey_r2:.2f}")
+        if financial_data is not None:
+            st.metric("Retirement Model Accuracy (R²)", f"{retirement_r2:.2f}")
+        
+
+    with st.sidebar:
+        st.header("Dashboard Insights")
+        st.info("Explore your financial future with these tools!")
         
         st.markdown("### 🔑 Your Market Data Pass")
         st.write("To see live stock prices and news, we need a 'key'—think of it like a ticket to unlock real-time market updates! It’s free and easy to get.")
