@@ -20,28 +20,23 @@ st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state
 
 # Data Loading Functions
 @st.cache_data
-def load_investment_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
+def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
+    st.write(f"Checking for file at: {os.path.abspath(csv_path)}")  # Debug path
     if not os.path.exists(csv_path):
-        st.error("🚨 Investment CSV not found! Please upload 'investment_data.csv'")
+        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
         return None
     try:
         df = pd.read_csv(csv_path)
-        # Ensure required columns are present
-        required_cols = ["Company", "Category", "Min_Invest", "Risk", "Goal", "Expected_Return", "Volatility"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            st.error(f"🚨 Missing columns in investment_data.csv: {', '.join(missing_cols)}")
+        st.write(f"Loaded CSV with columns: {df.columns.tolist()}")  # Debug columns
+        df['Date'] = pd.to_datetime(df['date'], errors='coerce')
+        if df['Date'].isnull().all():
+            st.error("🚨 Invalid date format in stock data!")
             return None
-        # Add encoded columns if not already in CSV
-        if "Risk_Encoded" not in df.columns:
-            df["Risk_Encoded"] = df["Risk"].map({"Low": 0, "Medium": 1, "High": 2})
-        if "Goal_Encoded" not in df.columns:
-            df["Goal_Encoded"] = df["Goal"].map({
-                "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
-            })
+        df = df[['Date', 'open', 'high', 'low', 'close', 'volume']].sort_values(by='Date').dropna()
+        st.write(f"Processed stock data with {len(df)} rows")  # Debug row count
         return df
     except Exception as e:
-        st.error(f"🚨 Error loading investment data: {str(e)}")
+        st.error(f"🚨 Error loading stock data: {str(e)}")
         return None
 
 @st.cache_data
@@ -307,6 +302,10 @@ def main():
 
     # Load data
     stock_data = load_stock_data()
+    if stock_data is None:
+        st.error("Cannot proceed without stock data. Please check the logs or upload 'NIFTY CONSUMPTION_daily_data.csv'.")
+        return
+
     survey_data = load_survey_data()
     financial_data = load_financial_data()
     investment_data = load_investment_data()
