@@ -20,20 +20,28 @@ st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state
 
 # Data Loading Functions
 @st.cache_data
-def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
+def load_investment_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
     if not os.path.exists(csv_path):
-        st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
+        st.error("🚨 Investment CSV not found! Please upload 'investment_data.csv'")
         return None
     try:
         df = pd.read_csv(csv_path)
-        df['Date'] = pd.to_datetime(df['date'], errors='coerce')
-        if df['Date'].isnull().all():
-            st.error("🚨 Invalid date format in stock data!")
+        # Ensure required columns are present
+        required_cols = ["Company", "Category", "Min_Invest", "Risk", "Goal", "Expected_Return", "Volatility"]
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            st.error(f"🚨 Missing columns in investment_data.csv: {', '.join(missing_cols)}")
             return None
-        df = df[['Date', 'open', 'high', 'low', 'close', 'volume']].sort_values(by='Date').dropna()
+        # Add encoded columns if not already in CSV
+        if "Risk_Encoded" not in df.columns:
+            df["Risk_Encoded"] = df["Risk"].map({"Low": 0, "Medium": 1, "High": 2})
+        if "Goal_Encoded" not in df.columns:
+            df["Goal_Encoded"] = df["Goal"].map({
+                "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
+            })
         return df
     except Exception as e:
-        st.error(f"🚨 Error loading stock data: {str(e)}")
+        st.error(f"🚨 Error loading investment data: {str(e)}")
         return None
 
 @st.cache_data
@@ -301,6 +309,11 @@ def main():
     stock_data = load_stock_data()
     survey_data = load_survey_data()
     financial_data = load_financial_data()
+    investment_data = load_investment_data()
+
+    if investment_data is None:
+        st.error("Cannot proceed without investment data. Please upload 'investment_data.csv'.")
+        return
 
     # Train models
     stock_model, stock_r2 = None, 0.0
@@ -313,6 +326,8 @@ def main():
     if financial_data is not None:
         retirement_model, retirement_r2 = train_retirement_model(financial_data)
     investment_model = train_investment_model(investment_data)
+
+    # Continue with sidebar, tabs, etc.
 
     # Sidebar
     with st.sidebar:
