@@ -17,23 +17,6 @@ from datetime import datetime
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
 
-# Simulated Investment Dataset
-investment_data = pd.DataFrame({
-    "Company": ["Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
-                "Paytm", "Zomato", "Bitcoin", "Ethereum"],
-    "Category": ["Large Cap", "Large Cap", "Medium Cap", "Medium Cap",
-                 "Low Cap", "Low Cap", "Crypto", "Crypto"],
-    "Min_Invest": [1000, 500, 1500, 500, 2000, 2000, 5000, 3000],
-    "Risk": ["Medium", "Low", "Medium", "Medium", "High", "High", "High", "High"],
-    "Goal": ["Wealth growth", "Emergency fund", "Future expenses", "Emergency fund",
-             "Wealth growth", "Future expenses", "No specific goal", "Wealth growth"],
-    "Expected_Return": [8.5, 6.0, 10.0, 7.5, 15.0, 14.0, 20.0, 18.0],
-    "Volatility": [15.0, 10.0, 20.0, 12.0, 30.0, 28.0, 50.0, 45.0]
-})
-investment_data["Risk_Encoded"] = investment_data["Risk"].map({"Low": 0, "Medium": 1, "High": 2})
-investment_data["Goal_Encoded"] = investment_data["Goal"].map({
-    "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
-})
 
 # Data Loading Functions
 @st.cache_data
