@@ -17,23 +17,38 @@ from datetime import datetime
 # Page Configuration
 st.set_page_config(page_title="💰 Artha", layout="wide", initial_sidebar_state="expanded")
 
+# Simulated Investment Dataset
+investment_data = pd.DataFrame({
+    "Company": ["Reliance Industries", "HDFC Bank", "Bajaj Finance", "SBI Bluechip Fund",
+                "Paytm", "Zomato", "Bitcoin", "Ethereum"],
+    "Category": ["Large Cap", "Large Cap", "Medium Cap", "Medium Cap",
+                 "Low Cap", "Low Cap", "Crypto", "Crypto"],
+    "Min_Invest": [1000, 500, 1500, 500, 2000, 2000, 5000, 3000],
+    "Risk": ["Medium", "Low", "Medium", "Medium", "High", "High", "High", "High"],
+    "Goal": ["Wealth growth", "Emergency fund", "Future expenses", "Emergency fund",
+             "Wealth growth", "Future expenses", "No specific goal", "Wealth growth"],
+    "Expected_Return": [8.5, 6.0, 10.0, 7.5, 15.0, 14.0, 20.0, 18.0],
+    "Volatility": [15.0, 10.0, 20.0, 12.0, 30.0, 28.0, 50.0, 45.0]
+})
+investment_data["Risk_Encoded"] = investment_data["Risk"].map({"Low": 0, "Medium": 1, "High": 2})
+investment_data["Goal_Encoded"] = investment_data["Goal"].map({
+    "Wealth growth": 0, "Emergency fund": 1, "Future expenses": 2, "No specific goal": 3
+})
+
 
 # Data Loading Functions
 @st.cache_data
 def load_stock_data(csv_path="NIFTY CONSUMPTION_daily_data.csv"):
-    st.write(f"Checking for file at: {os.path.abspath(csv_path)}")  # Debug path
     if not os.path.exists(csv_path):
         st.error("🚨 Stock CSV not found! Please upload 'NIFTY CONSUMPTION_daily_data.csv'")
         return None
     try:
         df = pd.read_csv(csv_path)
-        st.write(f"Loaded CSV with columns: {df.columns.tolist()}")  # Debug columns
         df['Date'] = pd.to_datetime(df['date'], errors='coerce')
         if df['Date'].isnull().all():
             st.error("🚨 Invalid date format in stock data!")
             return None
         df = df[['Date', 'open', 'high', 'low', 'close', 'volume']].sort_values(by='Date').dropna()
-        st.write(f"Processed stock data with {len(df)} rows")  # Debug row count
         return df
     except Exception as e:
         st.error(f"🚨 Error loading stock data: {str(e)}")
@@ -302,17 +317,8 @@ def main():
 
     # Load data
     stock_data = load_stock_data()
-    if stock_data is None:
-        st.error("Cannot proceed without stock data. Please check the logs or upload 'NIFTY CONSUMPTION_daily_data.csv'.")
-        return
-
     survey_data = load_survey_data()
     financial_data = load_financial_data()
-    investment_data = load_investment_data()
-
-    if investment_data is None:
-        st.error("Cannot proceed without investment data. Please upload 'investment_data.csv'.")
-        return
 
     # Train models
     stock_model, stock_r2 = None, 0.0
